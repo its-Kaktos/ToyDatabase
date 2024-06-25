@@ -1,8 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlParser", "src\SqlParser\SqlParser.csproj", "{09195F6D-521D-4F73-BB71-6BA1C0F3219A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E00F1368-C9BD-4531-BA62-410120472BFA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09195F6D-521D-4F73-BB71-6BA1C0F3219A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09195F6D-521D-4F73-BB71-6BA1C0F3219A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09195F6D-521D-4F73-BB71-6BA1C0F3219A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09195F6D-521D-4F73-BB71-6BA1C0F3219A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{09195F6D-521D-4F73-BB71-6BA1C0F3219A} = {E00F1368-C9BD-4531-BA62-410120472BFA}
 	EndGlobalSection
 EndGlobal
