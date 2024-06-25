@@ -35,8 +35,8 @@ public class QueryParser
                 case '^':
                     tokens.Add(new Token { TokenType = TokenType.Power });
                     break;
-                case < '9' and > '0':
-                    tokens.Add(new Token { TokenType = TokenType.Number, ValueByte = byte.Parse(sql.AsSpan(i, 1)) });
+                case >= '0' and <= '9':
+                    tokens.Add(GetNumberToken(ref i, sql));
                     break;
                 default:
                     tokens.Add(new Token { TokenType = TokenType.String, ValueChar = sql[i] });
@@ -45,6 +45,42 @@ public class QueryParser
         }
 
         return tokens;
+    }
+
+    private Token GetNumberToken(ref int startFrom, string sql)
+    {
+        var isDouble = false;
+        var stopIndex = -1;
+        for (var j = startFrom; j <= sql.Length; j++)
+        {
+            if (j == sql.Length)
+            {
+                stopIndex = j;
+                break;
+            }
+
+            switch (sql[j])
+            {
+                case '.':
+                    isDouble = true;
+                    continue;
+                case >= '0' and <= '9':
+                    continue;
+            }
+
+            stopIndex = j;
+            break;
+        }
+
+        var stopIndexIsEmpty = stopIndex == -1;
+        var length = stopIndexIsEmpty ? 1 : stopIndex - startFrom;
+        var token = isDouble
+            ? new Token { TokenType = TokenType.Number, ValueDouble = decimal.Parse(sql.AsSpan(startFrom, length)) } 
+            : new Token { TokenType = TokenType.Number, ValueInt = int.Parse(sql.AsSpan(startFrom, length)) };
+        
+        if (!stopIndexIsEmpty) startFrom = stopIndex - 1;
+
+        return token;
     }
 
     public void CreateExpression(List<Token> tokens)

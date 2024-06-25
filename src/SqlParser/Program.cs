@@ -3,7 +3,8 @@
 
 using SqlParser;
 
-var sql = "1 + 5";
+var sql = "123456 + 555.9826 - 11123.234";
+// var sql = "123456+555.9826-11123.234";
 
 var sqlParser = new QueryParser();
 
