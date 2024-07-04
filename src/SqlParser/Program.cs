@@ -3,11 +3,9 @@
 
 using SqlParser;
 
-var sql = "123456 + 555.9826 - 11123.234";
-// var sql = "123456+555.9826-11123.234";
+// var sql = "123456 + 555.9826 - 11123.234";
+var sql = "123456+555.9826-11123.234";
 
-var sqlParser = new QueryParser();
-
-var tokens = sqlParser.Tokenizer(sql);
+var x = Lexer.Tokenize(sql).ToList();
 
 Console.WriteLine("Hello, World!");
