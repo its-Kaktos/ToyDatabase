@@ -5,6 +5,7 @@ public class Interpreter
     private readonly string _src;
     private int _position;
     private Token? _currentToken;
+    private char? _currentCharacter;
     private const string MathOperations = "+-/*";
 
     public Interpreter(string src)
@@ -12,24 +13,64 @@ public class Interpreter
         ArgumentException.ThrowIfNullOrWhiteSpace(src);
         _src = src;
         _position = 0;
+        _currentCharacter = _src[_position];
         _currentToken = null;
     }
 
     public int Evaluate()
     {
-        _currentToken = GetNextToken();
+        var left = GetNextToken();
+        var mathOp = GetNextToken();
+        var currentToken = GetNextToken();
+
+        if (left == Token.EofToken) throw new InvalidOperationException("Left hand side token type can not be Eof.");
+        if (mathOp == Token.EofToken) throw new InvalidOperationException("Math operator token type can not be Eof.");
+        if (currentToken == Token.EofToken) throw new InvalidOperationException("Right hand side token type can not be Eof.");
         
-        var left = _currentToken!;
-        Eat(TokenType.Integer);
-        
-        var operation = _currentToken!;
-        Eat(TokenType.Plus);
-        
-        var right = _currentToken;
-        Eat(TokenType.Integer);
-        
-        var result = int.Parse(left.Value!) + int.Parse(right.Value!);
-        return result;
+        var leftValue = int.Parse(left.Value!);
+        while (currentToken != Token.EofToken)
+        {
+            switch (mathOp.Type)
+            {
+                case TokenType.Plus:
+                    leftValue += int.Parse(currentToken.Value!);
+                    AdvanceMathOpAndCurrentToken();
+                    if (IsTokensEof()) return leftValue;
+                    break;
+                case TokenType.Minus:
+                    leftValue -= int.Parse(currentToken.Value!);
+                    AdvanceMathOpAndCurrentToken();
+                    if (IsTokensEof()) return leftValue;
+                    break;
+                case TokenType.Multiply:
+                    leftValue *= int.Parse(currentToken.Value!);
+                    AdvanceMathOpAndCurrentToken();
+                    if (IsTokensEof()) return leftValue;
+                    break;
+                case TokenType.Divide:
+                    leftValue /= int.Parse(currentToken.Value!);
+                    AdvanceMathOpAndCurrentToken();
+                    if (IsTokensEof()) return leftValue;
+                    break;
+                case TokenType.Integer:
+                case TokenType.EOF:
+                default:
+                    throw new InvalidOperationException("Invalid math operator.");
+            }
+        }
+
+        return leftValue;
+
+        void AdvanceMathOpAndCurrentToken()
+        {
+            mathOp = GetNextToken();
+            currentToken = GetNextToken();
+        }
+
+        bool IsTokensEof()
+        {
+            return left == Token.EofToken || mathOp == Token.EofToken || currentToken == Token.EofToken;
+        }
     }
 
     /// <summary>
@@ -39,13 +80,18 @@ public class Interpreter
     /// <returns>Token</returns>
     public Token GetNextToken()
     {
-        var current = NextTokenAsString();
-        if (current is null) return Token.EofToken;
+        SkipWhiteSpace();
+        if (_currentCharacter is null) return Token.EofToken;
 
-        if (current.Length == 1 && MathOperations.Contains(current[0])) return GetMathOperationToken(current);
-        if (IsDigit(current)) return new Token(TokenType.Integer, current);
+        if (TryParseMathOperator(_currentCharacter.Value, out var token))
+        {
+            Advance();
+            return token!;
+        }
 
-        throw new InvalidOperationException($"{current} is a invalid token");
+        if (char.IsDigit(_currentCharacter.Value)) return GetInteger();
+
+        throw new InvalidOperationException("Should not reach here");
     }
 
     /// <summary>
@@ -63,44 +109,6 @@ public class Interpreter
         _currentToken = GetNextToken();
     }
 
-    /// <summary>
-    /// Retrieves the next token from the input string.
-    /// </summary>
-    /// <returns>
-    /// Returns <c>null</c> if there are no tokens left in input string.
-    /// Returns an empty string (" ") if the current token is a space character.
-    /// Otherwise, returns the next token found in input string.
-    /// </returns>
-    private string? NextTokenAsString()
-    {
-        if (_position >= _src.Length) return null;
-
-        while (_src[_position] == ' ')
-        {
-            _position++;
-            if (_position >= _src.Length) return null;
-        }
-
-        if (MathOperations.Contains(_src[_position]))
-        {
-            var result = _src[_position].ToString();
-            _position++;
-            return result;
-        }
-
-        var startFrom = _position;
-        for (var i = startFrom; i < _src.Length; i++)
-        {
-            if (_src[i] != ' ' && !MathOperations.Contains(_src[i])) continue;
-
-            _position = i;
-            return _src[startFrom..i];
-        }
-
-        _position = _src.Length;
-        return _src[startFrom..];
-    }
-
     private static bool IsDigit(string input)
     {
         for (var i = 0; i < input.Length; i++)
@@ -111,17 +119,59 @@ public class Interpreter
         return true;
     }
 
-    private static Token GetMathOperationToken(string input)
+    private void Advance()
     {
-        if (input.Length is not 1) throw new InvalidOperationException("Math operator can only have 1 character.");
+        _position++;
+        if (_position >= _src.Length)
+        {
+            _currentCharacter = null;
+            return;
+        }
 
-        return input[0] switch
+        _currentCharacter = _src[_position];
+    }
+
+    private void SkipWhiteSpace()
+    {
+        while (_currentCharacter is ' ')
+        {
+            Advance();
+        }
+    }
+
+    private bool TryParseMathOperator(char input, out Token? token)
+    {
+        token = null;
+        if (!MathOperations.Contains(input)) return false;
+
+        token = input switch
         {
             '+' => new Token(TokenType.Plus),
             '-' => new Token(TokenType.Minus),
             '/' => new Token(TokenType.Divide),
             '*' => new Token(TokenType.Multiply),
-            _ => throw new InvalidOperationException($"{input} is not a valid math operator.")
+            _ => throw new InvalidOperationException("Should not reach here.")
         };
+
+        return true;
+    }
+
+    private Token GetInteger()
+    {
+        var startFrom = _position;
+        while (_currentCharacter is not null)
+        {
+            if (char.IsDigit(_currentCharacter.Value))
+            {
+                Advance();
+                continue;
+            }
+
+            var token = new Token(TokenType.Integer, _src[startFrom.._position]);
+            return token;
+        }
+
+        _position = _src.Length;
+        return new Token(TokenType.Integer, _src[startFrom..]);
     }
 }

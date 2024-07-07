@@ -10,9 +10,9 @@ using SqlParser;
 
 // var x = Lexer.(sql);
 // var input = "123+1 - 523 / 234 * 234  ";
-// var input = "123 + 1  - 4";
-var input = "123+1";
+// var input = "123+1";
 
+var input = "100 + 200 - 50 + 50";
 var interpreter = new Interpreter(input);
 
 // var x = new List<Token2>();
