@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlParser", "src\SqlParser\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E00F1368-C9BD-4531-BA62-410120472BFA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{EEC247DE-F434-4772-A37D-289C3842ACD3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlParser.UnitTests", "tests\SqlParser.UnitTests\SqlParser.UnitTests.csproj", "{C0EAE788-3E01-4E1E-880A-8D665230E933}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,8 +18,13 @@ Global
 		{09195F6D-521D-4F73-BB71-6BA1C0F3219A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09195F6D-521D-4F73-BB71-6BA1C0F3219A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09195F6D-521D-4F73-BB71-6BA1C0F3219A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0EAE788-3E01-4E1E-880A-8D665230E933}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0EAE788-3E01-4E1E-880A-8D665230E933}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0EAE788-3E01-4E1E-880A-8D665230E933}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0EAE788-3E01-4E1E-880A-8D665230E933}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{09195F6D-521D-4F73-BB71-6BA1C0F3219A} = {E00F1368-C9BD-4531-BA62-410120472BFA}
+		{C0EAE788-3E01-4E1E-880A-8D665230E933} = {EEC247DE-F434-4772-A37D-289C3842ACD3}
 	EndGlobalSection
 EndGlobal
