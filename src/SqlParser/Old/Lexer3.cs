@@ -2,7 +2,7 @@ using System.Collections.Frozen;
 
 namespace SqlParser;
 
-public class Lexer
+public class Lexer3
 {
     private static readonly FrozenSet<char> MathOperations = new[] { '*', '-', '+', '/' }.ToFrozenSet();
     

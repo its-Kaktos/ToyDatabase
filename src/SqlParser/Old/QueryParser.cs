@@ -5,11 +5,11 @@ namespace SqlParser;
 
 public class QueryParser
 {
-    public List<Token> Tokenizer(string sql)
+    public List<Token3> Tokenizer(string sql)
     {
         ArgumentNullException.ThrowIfNull(sql);
 
-        var tokens = new List<Token>();
+        var tokens = new List<Token3>();
         for (var i = 0; i < sql.Length; i++)
         {
             switch (sql[i])
@@ -18,28 +18,28 @@ public class QueryParser
                 case '\n':
                 case '\r':
                 case '\t':
-                    tokens.Add(new Token { TokenType = TokenType.WhiteSpace });
+                    tokens.Add(new Token3 { TokenType3 = TokenType3.WhiteSpace });
                     break;
                 case '-':
-                    tokens.Add(new Token { TokenType = TokenType.Minus });
+                    tokens.Add(new Token3 { TokenType3 = TokenType3.Minus });
                     break;
                 case '+':
-                    tokens.Add(new Token { TokenType = TokenType.Plus });
+                    tokens.Add(new Token3 { TokenType3 = TokenType3.Plus });
                     break;
                 case '*':
-                    tokens.Add(new Token { TokenType = TokenType.Multiply });
+                    tokens.Add(new Token3 { TokenType3 = TokenType3.Multiply });
                     break;
                 case '/':
-                    tokens.Add(new Token { TokenType = TokenType.Divide });
+                    tokens.Add(new Token3 { TokenType3 = TokenType3.Divide });
                     break;
                 case '^':
-                    tokens.Add(new Token { TokenType = TokenType.Power });
+                    tokens.Add(new Token3 { TokenType3 = TokenType3.Power });
                     break;
                 case >= '0' and <= '9':
                     tokens.Add(GetNumberToken(ref i, sql));
                     break;
                 default:
-                    tokens.Add(new Token { TokenType = TokenType.String, ValueChar = sql[i] });
+                    tokens.Add(new Token3 { TokenType3 = TokenType3.String, ValueChar = sql[i] });
                     break;
             }
         }
@@ -47,7 +47,7 @@ public class QueryParser
         return tokens;
     }
 
-    private Token GetNumberToken(ref int startFrom, string sql)
+    private Token3 GetNumberToken(ref int startFrom, string sql)
     {
         var isDouble = false;
         var stopIndex = -1;
@@ -75,36 +75,36 @@ public class QueryParser
         var stopIndexIsEmpty = stopIndex == -1;
         var length = stopIndexIsEmpty ? 1 : stopIndex - startFrom;
         var token = isDouble
-            ? new Token { TokenType = TokenType.Number, ValueDouble = decimal.Parse(sql.AsSpan(startFrom, length)) } 
-            : new Token { TokenType = TokenType.Number, ValueInt = int.Parse(sql.AsSpan(startFrom, length)) };
+            ? new Token3 { TokenType3 = TokenType3.Number, ValueDouble = decimal.Parse(sql.AsSpan(startFrom, length)) } 
+            : new Token3 { TokenType3 = TokenType3.Number, ValueInt = int.Parse(sql.AsSpan(startFrom, length)) };
         
         if (!stopIndexIsEmpty) startFrom = stopIndex - 1;
 
         return token;
     }
 
-    public void CreateExpression(List<Token> tokens)
+    public void CreateExpression(List<Token3> tokens)
     {
         Expression rootExpression;
         foreach (var token in tokens)
         {
-            switch (token.TokenType)
+            switch (token.TokenType3)
             {
-                case TokenType.Number:
+                case TokenType3.Number:
                     break;
-                case TokenType.String:
+                case TokenType3.String:
                     break;
-                case TokenType.Plus:
+                case TokenType3.Plus:
                     break;
-                case TokenType.Minus:
+                case TokenType3.Minus:
                     break;
-                case TokenType.Multiply:
+                case TokenType3.Multiply:
                     break;
-                case TokenType.Divide:
+                case TokenType3.Divide:
                     break;
-                case TokenType.Power:
+                case TokenType3.Power:
                     break;
-                case TokenType.WhiteSpace:
+                case TokenType3.WhiteSpace:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
