@@ -12,16 +12,10 @@ using SqlParser;
 // var input = "123+1 - 523 / 234 * 234  ";
 // var input = "123+1";
 
-var input = "100 + 200 - 50 + 50";
-var interpreter = new Interpreter(input);
-
-// var x = new List<Token2>();
-// while (true)
-// {
-//     var currentToken = interpreter.GetNextToken();
-//     x.Add(currentToken);
-//     if(currentToken == Token2.EofToken) break;
-// }
+// var input = "100 + 200 - 50 + 50";
+var input = "100 / 10 * 20";
+var lexer = new Lexer(input);
+var interpreter = new Interpreter(lexer);
 
 Console.WriteLine(interpreter.Evaluate());
 Console.WriteLine("xds");

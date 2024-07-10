@@ -2,9 +2,21 @@ using System.Text;
 
 namespace SqlParser;
 
-public record Token(TokenType Type, string? Value = null)
+public record Token
 {
     public static readonly Token EofToken = new(TokenType.EOF);
+
+    public Token(TokenType Type, string? Value = null)
+    {
+        this.Type = Type;
+        this.Value = Value;
+        parseValueBasedOnType();
+    }
+
+    public TokenType Type { get; init; }
+    public string? Value { get; init; }
+
+    public int? ValueAsInt { get; private set; }
 
     public override string ToString()
     {
@@ -16,5 +28,14 @@ public record Token(TokenType Type, string? Value = null)
         sb.Append(')');
 
         return sb.ToString();
+    }
+
+    private void parseValueBasedOnType()
+    {
+        ValueAsInt = Type switch
+        {
+            TokenType.Integer => int.Parse(Value!),
+            _ => ValueAsInt
+        };
     }
 }
