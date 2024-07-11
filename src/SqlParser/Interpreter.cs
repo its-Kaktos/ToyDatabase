@@ -52,7 +52,7 @@ public class Interpreter
 
     private int GetTerm()
     {
-        var result = GetFactor();
+        var result = GetPower();
 
         while (_currentToken.Type is TokenType.Divide or TokenType.Multiply)
         {
@@ -60,13 +60,26 @@ public class Interpreter
             {
                 case TokenType.Divide:
                     Eat(TokenType.Divide);
-                    result /= GetFactor();
+                    result /= GetPower();
                     break;
                 case TokenType.Multiply:
                     Eat(TokenType.Multiply);
-                    result *= GetFactor();
+                    result *= GetPower();
                     break;
             }
+        }
+
+        return result;
+    }
+
+    private int GetPower()
+    {
+        var result = GetFactor();
+
+        while (_currentToken.Type is TokenType.Power)
+        {
+            Eat(TokenType.Power);
+            result = (int)Math.Pow(result, GetFactor());
         }
 
         return result;

@@ -46,6 +46,9 @@ public class Lexer
                 case ')':
                     Advance();
                     return new Token(TokenType.RParen);
+                case '^':
+                    Advance();
+                    return new Token(TokenType.Power);
                 default:
                     throw new InvalidOperationException($"{_currentCharacter} is not a valid token.");
             }

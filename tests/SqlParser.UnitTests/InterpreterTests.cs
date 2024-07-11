@@ -28,9 +28,17 @@ public class InterpreterTests
         new object[] { "2 * (1 + 1) + 3 * (5 - 3)", 10 },
     };
 
+    public static IEnumerable<object[]> ShouldEvaluatePowerOfCorrectlyData => new List<object[]>
+    {
+        new object[] { "(1 + 1) ^ 2", 4 },
+        new object[] { "(1 + 2 * 3 ^ 2) ^ 2", 361 },
+        new object[] { "(1 + 1) ^ 2 * 6", 24 },
+    };
+    
     [Theory]
     [MemberData(nameof(ShouldEvaluateCorrectlyData))]
     [MemberData(nameof(ShouldEvaluateParenthesesCorrectlyData))]
+    [MemberData(nameof(ShouldEvaluatePowerOfCorrectlyData))]
     public void Should_evaluate_correctly(string input, int expected)
     {
         var lexer = new Lexer(input);

@@ -10,5 +10,6 @@ public enum TokenType
     Divide,
     LParen,
     RParen,
+    Power,
     EOF
 }
