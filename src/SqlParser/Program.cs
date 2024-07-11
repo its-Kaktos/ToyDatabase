@@ -13,9 +13,19 @@ using SqlParser;
 // var input = "123+1";
 
 // var input = "100 + 200 - 50 + 50";
+// var input = "100 / (10 * 20";
 var input = "100 / 10 * 20";
 var lexer = new Lexer(input);
-var interpreter = new Interpreter(lexer);
+var parser = new Parser(lexer);
+var interpreter = new Interpreter(parser);
 
-Console.WriteLine(interpreter.Evaluate());
-Console.WriteLine("xds");
+try
+{
+    Console.WriteLine(interpreter.Evaluate());
+    Console.WriteLine("xds");
+}
+catch (Exception e)
+{
+    Console.WriteLine(e);
+    throw;
+}

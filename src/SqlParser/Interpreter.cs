@@ -1,109 +1,38 @@
-using System.Runtime.Intrinsics.Arm;
+using System.Xml;
 
 namespace SqlParser;
 
-public class Interpreter
+public class Interpreter : NodeVisitor
 {
-    private readonly Lexer _lexer;
-    private Token _currentToken;
+    private readonly Parser _parser;
 
-    public Interpreter(Lexer lexer)
+    public Interpreter(Parser parser)
     {
-        _lexer = lexer;
-        _currentToken = lexer.NextToken();
+        _parser = parser;
     }
 
     public int Evaluate()
     {
-        // expr   : term ((PLUS | MINUS) term)*
-        // term   : factor ((MUL | DIV) factor)*
-        // factor : INTEGER
-        return GetExpr();
+        var tree = _parser.Parse();
+
+        return Visit(tree);
     }
-
-    private void Eat(TokenType tokenType)
+    
+    private int VisitBinaryOperator(BinaryOperator node)
     {
-        if (_currentToken.Type != tokenType) throw new InvalidOperationException("Invalid syntax.");
-
-        _currentToken = _lexer.NextToken();
-    }
-
-    private int GetExpr()
-    {
-        var result = GetTerm();
-
-        while (_currentToken.Type is TokenType.Plus or TokenType.Minus)
+        return node.Operator.Type switch
         {
-            switch (_currentToken.Type)
-            {
-                case TokenType.Plus:
-                    Eat(TokenType.Plus);
-                    result += GetTerm();
-                    break;
-                case TokenType.Minus:
-                    Eat(TokenType.Minus);
-                    result -= GetTerm();
-                    break;
-            }
-        }
-
-        return result;
+            TokenType.Plus => Visit(node.Left) + Visit(node.Right),
+            TokenType.Minus => Visit(node.Left) - Visit(node.Right),
+            TokenType.Multiply => Visit(node.Left) * Visit(node.Right),
+            TokenType.Divide => Visit(node.Left) / Visit(node.Right),
+            TokenType.Power => (int)Math.Pow(Visit(node.Left), Visit(node.Right)),
+            _ => throw new ArgumentOutOfRangeException()
+        };
     }
 
-    private int GetTerm()
+    private int VisitNumberNode(NumberNode node)
     {
-        var result = GetPower();
-
-        while (_currentToken.Type is TokenType.Divide or TokenType.Multiply)
-        {
-            switch (_currentToken.Type)
-            {
-                case TokenType.Divide:
-                    Eat(TokenType.Divide);
-                    result /= GetPower();
-                    break;
-                case TokenType.Multiply:
-                    Eat(TokenType.Multiply);
-                    result *= GetPower();
-                    break;
-            }
-        }
-
-        return result;
-    }
-
-    private int GetPower()
-    {
-        var result = GetFactor();
-
-        while (_currentToken.Type is TokenType.Power)
-        {
-            Eat(TokenType.Power);
-            result = (int)Math.Pow(result, GetFactor());
-        }
-
-        return result;
-    }
-
-    private int GetFactor()
-    {
-        switch (_currentToken.Type)
-        {
-            case TokenType.Integer:
-            {
-                var current = _currentToken;
-                Eat(TokenType.Integer);
-                return current.ValueAsInt!.Value;
-            }
-            case TokenType.LParen:
-            {
-                Eat(TokenType.LParen);
-                var result = GetExpr();
-                Eat(TokenType.RParen);
-                return result;
-            }
-            default:
-                throw new InvalidOperationException($"{_currentToken.Type} is not a valid Factor");
-        }
+        return node.Token.ValueAsInt!.Value;
     }
 }

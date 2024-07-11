@@ -2,7 +2,7 @@ using FluentAssertions;
 
 namespace SqlParser.UnitTests;
 
-public class InterpreterTests
+public class ParserTests
 {
     public static IEnumerable<object[]> ShouldEvaluateCorrectlyData => new List<object[]>
     {
@@ -42,7 +42,8 @@ public class InterpreterTests
     public void Should_evaluate_correctly(string input, int expected)
     {
         var lexer = new Lexer(input);
-        var sut = new Interpreter(lexer);
+        var parser = new Parser(lexer);
+        var sut = new Interpreter(parser);
 
         var actual = sut.Evaluate();
 
