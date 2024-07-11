@@ -1,3 +1,5 @@
+using System.Runtime.Intrinsics.Arm;
+
 namespace SqlParser;
 
 public class Interpreter
@@ -13,39 +15,10 @@ public class Interpreter
 
     public int Evaluate()
     {
-        var result = GetFactor();
-
-        while (_currentToken.Type is TokenType.Divide or TokenType.Multiply or TokenType.Plus or TokenType.Minus)
-        {
-            int right;
-            switch (_currentToken.Type)
-            {
-                case TokenType.Plus:
-                    Eat(TokenType.Plus);
-                    right = GetFactor();
-                    result += right;
-                    continue;
-                case TokenType.Minus:
-                    Eat(TokenType.Minus);
-                    right = GetFactor();
-                    result -= right;
-                    continue;
-                case TokenType.Multiply:
-                    Eat(TokenType.Multiply);
-                    right = GetFactor();
-                    result *= right;
-                    continue;
-                case TokenType.Divide:
-                    Eat(TokenType.Divide);
-                    right = GetFactor();
-                    result /= right;
-                    continue;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        return result;
+        // expr   : term ((PLUS | MINUS) term)*
+        // term   : factor ((MUL | DIV) factor)*
+        // factor : INTEGER
+        return GetExpr();
     }
 
     private void Eat(TokenType tokenType)
@@ -54,7 +27,51 @@ public class Interpreter
 
         _currentToken = _lexer.NextToken();
     }
+
+    private int GetExpr()
+    {
+        var result = GetTerm();
+
+        while (_currentToken.Type is TokenType.Plus or TokenType.Minus)
+        {
+            switch (_currentToken.Type)
+            {
+                case TokenType.Plus:
+                    Eat(TokenType.Plus);
+                    result += GetTerm();
+                    break;
+                case TokenType.Minus:
+                    Eat(TokenType.Minus);
+                    result -= GetTerm();
+                    break;
+            }
+        }
+
+        return result;
+    }
     
+    private int GetTerm()
+    {
+        var result = GetFactor();
+
+        while (_currentToken.Type is TokenType.Divide or TokenType.Multiply)
+        {
+            switch (_currentToken.Type)
+            {
+                case TokenType.Divide:
+                    Eat(TokenType.Divide);
+                    result /= GetFactor();
+                    break;
+                case TokenType.Multiply:
+                    Eat(TokenType.Multiply);
+                    result *= GetFactor();
+                    break;
+            }
+        }
+
+        return result;
+    }
+
     private int GetFactor()
     {
         var current = _currentToken;

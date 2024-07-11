@@ -12,6 +12,8 @@ public class InterpreterTests
         new object[] { "1+2-4", -1 },
         new object[] { "6 / 2", 3 },
         new object[] { "10 / 2 * 5", 25 },
+        new object[] { "8 + 2 * 5", 18 },
+        new object[] { "8 + 2 * 5 / 5", 10 }
     };
 
     [Theory]
