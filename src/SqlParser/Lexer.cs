@@ -38,7 +38,17 @@ public class Lexer
                 return ParseInteger();
             }
 
-            throw new InvalidOperationException($"{_currentCharacter} is not a valid token.");
+            switch (_currentCharacter)
+            {
+                case '(':
+                    Advance();
+                    return new Token(TokenType.LParen);
+                case ')':
+                    Advance();
+                    return new Token(TokenType.RParen);
+                default:
+                    throw new InvalidOperationException($"{_currentCharacter} is not a valid token.");
+            }
         }
 
         return Token.EofToken;

@@ -49,7 +49,7 @@ public class Interpreter
 
         return result;
     }
-    
+
     private int GetTerm()
     {
         var result = GetFactor();
@@ -74,9 +74,23 @@ public class Interpreter
 
     private int GetFactor()
     {
-        var current = _currentToken;
-        Eat(TokenType.Integer);
-
-        return current.ValueAsInt!.Value;
+        switch (_currentToken.Type)
+        {
+            case TokenType.Integer:
+            {
+                var current = _currentToken;
+                Eat(TokenType.Integer);
+                return current.ValueAsInt!.Value;
+            }
+            case TokenType.LParen:
+            {
+                Eat(TokenType.LParen);
+                var result = GetExpr();
+                Eat(TokenType.RParen);
+                return result;
+            }
+            default:
+                throw new InvalidOperationException($"{_currentToken.Type} is not a valid Factor");
+        }
     }
 }
