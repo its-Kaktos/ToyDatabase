@@ -8,4 +8,9 @@ public record NumberNode : IAST
     }
     
     public Token Token { get; init; }
+
+    public string GetValue()
+    {
+        return Token.ValueAsInt!.Value.ToString();
+    }
 }

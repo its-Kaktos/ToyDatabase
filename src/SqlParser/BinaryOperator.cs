@@ -12,4 +12,15 @@ public record BinaryOperator : IAST
     public IAST Left { get; init; }
     public Token Operator { get; init; }
     public IAST Right { get; init; }
+
+    public IEnumerable<IAST> GetChildren()
+    {
+        yield return Left;
+        yield return Right;
+    }
+
+    public string GetValue()
+    {
+        return Operator.Type.ToString();
+    }
 }
