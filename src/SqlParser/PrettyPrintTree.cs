@@ -29,6 +29,7 @@ public static class PrettyPrintAst
     }
 }
 
+// https://github.com/AharonSambol/PrettyPrintTreeCSharp
 internal partial class PrettyPrintTree<TNode>
 {
     private static readonly Regex SlashNRegex = MyRegex();
