@@ -21,6 +21,6 @@ public record BinaryOperator : IAST
 
     public string GetValue()
     {
-        return Operator.Type.ToString();
+        return Operator.Type.ToHumanReadableString();
     }
 }

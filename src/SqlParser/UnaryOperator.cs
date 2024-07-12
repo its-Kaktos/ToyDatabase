@@ -18,6 +18,6 @@ public record UnaryOperator : IAST
 
     public string GetValue()
     {
-        return Operator.Type.ToString();
+        return Operator.Type.ToHumanReadableString();
     }
 }
