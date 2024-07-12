@@ -1,5 +1,10 @@
 namespace SqlParser;
 
+// Grammar:
+// expr :   term ( (PLUS | MINUS) term)*
+// term :   power ( (MUL | DIV) power)*
+// power :  factor ( (power) factor)*
+// factor : (PLUS | MINUS) factor | INTEGER | LParen factor RParen 
 public class Parser
 {
     private readonly Lexer _lexer;
@@ -26,7 +31,7 @@ public class Parser
         _currentToken = _lexer.NextToken();
     }
 
-    // Grammar: term ( (PLUS | MINUS) term)*
+    // expr : term ( (PLUS | MINUS) term)*
     private IAST GetExpr()
     {
         var node = GetTerm();
@@ -50,7 +55,7 @@ public class Parser
         return node;
     }
 
-    // Grammar: power ( (MUL | DIV) power)*
+    // term : power ( (MUL | DIV) power)*
     private IAST GetTerm()
     {
         var node = GetPower();
@@ -74,7 +79,7 @@ public class Parser
         return node;
     }
 
-    // Grammar: factor ( (POWER) factor)*
+    // power : factor ( (power) factor)*
     private IAST GetPower()
     {
         var node = GetFactor();
@@ -89,7 +94,7 @@ public class Parser
         return node;
     }
 
-    // Grammar: (PLUS | MINUS) factor | INTEGER | LParen factor RParen 
+    // factor : (PLUS | MINUS) factor | INTEGER | LParen factor RParen 
     private IAST GetFactor()
     {
         switch (_currentToken.Type)
