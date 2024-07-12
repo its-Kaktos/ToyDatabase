@@ -15,15 +15,18 @@ using SqlParser;
 // var input = "100 + 200 - 50 + 50";
 // var input = "100 / (10 * 20";
 // var input = "100 / 10 * 20";
-var input = "100 / (10 * 20) + 10 ^ (5 * 3 ^ 10) + 10 * (3 - (1 + (123 - 64)))";
+// var input = "100 / (10 * 20) + 10 ^ (5 * 3 ^ 10) + 10 * (3 - (1 + (123 - 64)))";
+var input = "1 + -2";
 var lexer = new Lexer(input);
 var parser = new Parser(lexer);
 var interpreter = new Interpreter(parser);
 
+
 try
 {
+    // parser.Parse().PrettyPrint();
     Console.WriteLine(interpreter.Evaluate());
-    Console.WriteLine("xds");
+    // Console.WriteLine("xds");
 }
 catch (Exception e)
 {

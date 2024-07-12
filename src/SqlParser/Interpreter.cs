@@ -18,6 +18,16 @@ public class Interpreter : NodeVisitor
         return Visit(tree);
     }
     
+    private int VisitUnaryOperator(UnaryOperator node)
+    {
+        return node.Operator.Type switch
+        {
+            TokenType.Plus => Visit(node.Child),
+            TokenType.Minus => -Visit(node.Child),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+    
     private int VisitBinaryOperator(BinaryOperator node)
     {
         return node.Operator.Type switch
