@@ -1,34 +1,43 @@
-using System.Collections.Frozen;
+using System.ComponentModel.Design;
 using SqlParser.Nodes;
 
 namespace SqlParser;
 
 /*
-Grammar:
-program : compound_statement DOT
+program : PROGRAM variable SEMI block DOT
+
+block : declarations compound_statement
+
+declarations : VAR (variable_declaration SEMI)+
+               | empty
+
+variable_declaration : ID (COMMA ID)* COLON type_spec
+
+type_spec : INTEGER | REAL
 
 compound_statement : BEGIN statement_list END
 
 statement_list : statement
-                | statement SEMI statement_list
+               | statement SEMI statement_list
 
 statement : compound_statement
-            | assignment_statement
-            | empty
+           | assignment_statement
+           | empty
 
 assignment_statement : variable ASSIGN expr
 
 empty :
 
-expr: term ((PLUS | MINUS) term)*
+expr : term ((PLUS | MINUS) term)*
 
-term: factor ((MUL | DIV) factor)*
+term : factor ((MUL | INTEGER_DIV | FLOAT_DIV) factor)*
 
 factor : PLUS factor
-        | MINUS factor
-        | INTEGER
-        | LPAREN expr RPAREN
-        | variable
+       | MINUS factor
+       | INTEGER_CONST
+       | REAL_CONST
+       | LPAREN expr RPAREN
+       | variable
 
 variable: ID
  */
@@ -48,13 +57,79 @@ public class Parser
         return GetProgram();
     }
 
-    // program : compound_statement DOT
+    // program : PROGRAM variable SEMI block DOT
     private IAST GetProgram()
     {
-        var result = GetCompoundStatement();
+        Eat(TokenType.Program);
+        var id = GetVariable();
+        Eat(TokenType.Semi);
+
+        var block = GetBlock();
         Eat(TokenType.Dot);
 
+        return new ProgramNode(new Token(TokenType.Program), id, block);
+    }
+
+    // block : declarations compound_statement
+    private IAST GetBlock()
+    {
+        var declarations = GetDeclarations();
+
+        return new BlockNode(declarations, GetCompoundStatement());
+    }
+
+    // declarations : VAR (variable_declaration SEMI)+
+    // | empty
+    private List<IAST> GetDeclarations()
+    {
+        var result = new List<IAST>();
+        if (_currentToken.Type is TokenType.VarDecl)
+        {
+            Eat(TokenType.VarDecl);
+            while (_currentToken.Type is TokenType.Id)
+            {
+                result.AddRange(GetVariableDeclaration());
+                Eat(TokenType.Semi);
+            }
+        }
+
         return result;
+    }
+
+    // variable_declaration : ID (COMMA ID)* COLON type_spec
+    private List<VarDeclNode> GetVariableDeclaration()
+    {
+        var ids = new List<Token>() { _currentToken };
+        Eat(TokenType.Id);
+
+        while (_currentToken.Type is TokenType.Comma)
+        {
+            Eat(TokenType.Comma);
+            ids.Add(_currentToken);
+            Eat(TokenType.Id);
+        }
+
+        Eat(TokenType.Colon);
+        var type = GetTypeSpec();
+
+        return ids.Select(x => new VarDeclNode(new VariableNode(x), type)).ToList();
+    }
+
+    // type_spec : INTEGER | REAL
+    private IAST GetTypeSpec()
+    {
+        var current = _currentToken;
+        switch (_currentToken.Type)
+        {
+            case TokenType.Integer:
+                Eat(TokenType.Integer);
+                return new NumberNode(current);
+            case TokenType.Real:
+                Eat(TokenType.Real);
+                return new NumberNode(current);
+            default:
+                throw new InvalidOperationException("Invalid syntax.");
+        }
     }
 
     // compound_statement : BEGIN statement_list END
@@ -137,18 +212,21 @@ public class Parser
         return node;
     }
 
-    // term : factor ( (MUL | DIV) factor)*
+    // term : factor ((MUL | INTEGER_DIV | FLOAT_DIV) factor)*
     private IAST GetTerm()
     {
         var node = GetFactor();
 
-        while (_currentToken.Type is TokenType.Divide or TokenType.Multiply)
+        while (_currentToken.Type is TokenType.IntegerDivide or TokenType.Multiply or TokenType.RealDivide)
         {
             var op = _currentToken;
             switch (_currentToken.Type)
             {
-                case TokenType.Divide:
-                    Eat(TokenType.Divide);
+                case TokenType.IntegerDivide:
+                    Eat(TokenType.IntegerDivide);
+                    break;
+                case TokenType.RealDivide:
+                    Eat(TokenType.RealDivide);
                     break;
                 case TokenType.Multiply:
                     Eat(TokenType.Multiply);
@@ -163,7 +241,8 @@ public class Parser
 
     // factor : PLUS factor
     // | MINUS factor
-    // | INTEGER
+    // | INTEGER_CONST
+    // | REAL_CONST
     // | LPAREN expr RPAREN
     // | variable
     private IAST GetFactor()
@@ -180,10 +259,16 @@ public class Parser
                 Eat(TokenType.Minus);
                 return new UnaryOperator(new Token(TokenType.Minus), GetFactor());
             }
-            case TokenType.Integer:
+            case TokenType.IntegerConst:
             {
                 var current = _currentToken;
-                Eat(TokenType.Integer);
+                Eat(TokenType.IntegerConst);
+                return new NumberNode(current);
+            }
+            case TokenType.RealConst:
+            {
+                var current = _currentToken;
+                Eat(TokenType.RealConst);
                 return new NumberNode(current);
             }
             case TokenType.LParen:
@@ -205,8 +290,7 @@ public class Parser
     {
         var result = new VariableNode(_currentToken);
         Eat(TokenType.Id);
-        
-        
+
         return result;
     }
 

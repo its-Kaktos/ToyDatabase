@@ -8,11 +8,17 @@ public class Lexer
     private readonly string _src;
     private int _position;
     private char? _currentCharacter;
-    private const string MathOperations = "+-*";
+    private const string MathOperations = "+-*/";
 
     private static readonly FrozenDictionary<string, Token> ReservedKeywords = new Dictionary<string, Token>
     {
-        { "begin", new Token(TokenType.Begin) }, { "end", new Token(TokenType.End) }, { "div", new Token(TokenType.Divide) }
+        { "begin", new Token(TokenType.Begin) },
+        { "end", new Token(TokenType.End) },
+        { "div", new Token(TokenType.RealDivide) },
+        { "program", new Token(TokenType.Program) },
+        { "var", new Token(TokenType.VarDecl) },
+        { "integer", new Token(TokenType.Integer) },
+        { "real", new Token(TokenType.Real) }
     }.ToFrozenDictionary();
 
     public Lexer(string src)
@@ -33,9 +39,16 @@ public class Lexer
                 continue;
             }
 
+            if (_currentCharacter.Value is '{')
+            {
+                Advance();
+                SkipComment();
+                continue;
+            }
+
             if (_currentCharacter.Value.IsAlphabetical()) return ParseIdentifier();
             if (MathOperations.Contains(_currentCharacter.Value)) return ParseMathOperator();
-            if (char.IsDigit(_currentCharacter.Value)) return ParseInteger();
+            if (char.IsDigit(_currentCharacter.Value)) return ParseNumber();
 
             switch (_currentCharacter)
             {
@@ -51,16 +64,35 @@ public class Lexer
                 case ';':
                     Advance();
                     return new Token(TokenType.Semi);
-                case ':' when Peek() == '=':
+                case ':':
+                    if (Peek() == '=')
+                    {
+                        Advance();
+                        Advance();
+                        return new Token(TokenType.Assign);
+                    }
+                    
                     Advance();
+                    return new Token(TokenType.Colon);
+                case ',':
                     Advance();
-                    return new Token(TokenType.Assign);
+                    return new Token(TokenType.Comma);
                 default:
                     throw new InvalidOperationException($"{_currentCharacter} is not a valid token.");
             }
         }
 
         return Token.EofToken;
+    }
+
+    private void SkipComment()
+    {
+        while (_currentCharacter is not '}')
+        {
+            Advance();
+        }
+
+        Advance();
     }
 
     private void Advance()
@@ -100,6 +132,7 @@ public class Lexer
             '*' => new Token(TokenType.Multiply),
             '+' => new Token(TokenType.Plus),
             '-' => new Token(TokenType.Minus),
+            '/' => new Token(TokenType.IntegerDivide),
             _ => throw new InvalidOperationException($"{_currentCharacter} is not a valid math operator.")
         };
 
@@ -108,8 +141,9 @@ public class Lexer
         return token;
     }
 
-    private Token ParseInteger()
+    private Token ParseNumber()
     {
+        var isFloat = false;
         var startPosition = _position;
         var endPosition = -1;
         while (_currentCharacter is not null && char.IsDigit(_currentCharacter.Value))
@@ -118,9 +152,21 @@ public class Lexer
             Advance();
         }
 
-        var length = endPosition is -1 ? _src.Length - 1 - startPosition : endPosition - startPosition + 1;
+        if (_currentCharacter is '.')
+        {
+            isFloat = true;
+            Advance();
+        }
 
-        return new Token(TokenType.Integer, _src.Substring(startPosition, length));
+        while (_currentCharacter is not null && char.IsDigit(_currentCharacter.Value))
+        {
+            endPosition = _position;
+            Advance();
+        }
+
+        var length = endPosition is -1 ? _src.Length - 1 - startPosition : endPosition - startPosition + 1;
+        var tokenValue = _src.Substring(startPosition, length);
+        return isFloat ? new Token(TokenType.RealConst, tokenValue) : new Token(TokenType.IntegerConst, tokenValue);
     }
 
     private Token ParseIdentifier()
@@ -132,6 +178,7 @@ public class Lexer
             endPosition = _position;
             Advance();
         }
+
         var length = endPosition is -1 ? _src.Length - 1 - startPosition : endPosition - startPosition + 1;
         var tokenValue = _src.Substring(startPosition, length).ToLower();
 

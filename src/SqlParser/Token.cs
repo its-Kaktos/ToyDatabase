@@ -17,6 +17,7 @@ public record Token
     public string? Value { get; init; }
 
     public int? ValueAsInt { get; private set; }
+    public float? ValueAsFloat { get; private set; }
 
     public override string ToString()
     {
@@ -32,10 +33,16 @@ public record Token
 
     private void parseValueBasedOnType()
     {
-        ValueAsInt = Type switch
+        if(Value is null) return;
+
+        switch (Type)
         {
-            TokenType.Integer => int.Parse(Value!),
-            _ => ValueAsInt
-        };
+            case TokenType.Integer:
+                ValueAsInt = int.Parse(Value);
+                break;
+            case TokenType.Real:
+                ValueAsFloat = float.Parse(Value!);
+                break;
+        }
     }
 }

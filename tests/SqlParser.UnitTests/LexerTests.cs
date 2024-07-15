@@ -94,7 +94,7 @@ public class LexerTests
                 new Token(TokenType.Integer, "4"),
                 new Token(TokenType.Multiply),
                 new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide)
+                new Token(TokenType.IntegerDivide)
             }
         },
         new object[]
@@ -108,7 +108,7 @@ public class LexerTests
                 new Token(TokenType.Integer, "4"),
                 new Token(TokenType.Multiply),
                 new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
+                new Token(TokenType.IntegerDivide),
                 new Token(TokenType.Integer, "9")
             }
         },
@@ -123,7 +123,7 @@ public class LexerTests
                 new Token(TokenType.Integer, "4"),
                 new Token(TokenType.Multiply),
                 new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
+                new Token(TokenType.IntegerDivide),
                 new Token(TokenType.Integer, "9")
             }
         },
@@ -138,7 +138,7 @@ public class LexerTests
                 new Token(TokenType.Integer, "4"),
                 new Token(TokenType.Multiply),
                 new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
+                new Token(TokenType.IntegerDivide),
                 new Token(TokenType.Integer, "9")
             }
         },
@@ -153,7 +153,7 @@ public class LexerTests
                 new Token(TokenType.Integer, "4"),
                 new Token(TokenType.Multiply),
                 new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
+                new Token(TokenType.IntegerDivide),
                 new Token(TokenType.Integer, "9")
             }
         }

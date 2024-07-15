@@ -13,6 +13,7 @@ public abstract class NodeVisitor
         var m = GetMethodEndingWith(node.GetType().Name);
         if (m is null) throw new InvalidOperationException($"No Visit{node.GetType()} method");
 
+        m.Invoke(this, [node]);
         var result = m.Invoke(this, [node]);
         if (result is null) throw new UnreachableException("How TF the result is null?");
 

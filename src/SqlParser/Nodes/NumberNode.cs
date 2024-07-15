@@ -6,11 +6,16 @@ public record NumberNode : IAST
     {
         Token = token;
     }
-    
+
     public Token Token { get; init; }
 
     public string GetValue()
     {
-        return Token.ValueAsInt!.Value.ToString();
+        if (Token.Type is TokenType.Integer or TokenType.Real)
+        {
+            return Token.Type.ToHumanReadableString();
+        }
+
+        return Token.Value ?? "";
     }
 }

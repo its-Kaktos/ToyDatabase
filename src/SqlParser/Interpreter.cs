@@ -13,11 +13,12 @@ public class Interpreter : NodeVisitor
         _parser = parser;
     }
 
-    public int Evaluate()
+    public Dictionary<string, int> Evaluate()
     {
         var tree = _parser.Parse();
 
-        return Visit(tree);
+        Visit(tree);
+        return _globalScope;
     }
     
     private int VisitUnaryOperator(UnaryOperator node)
@@ -37,7 +38,8 @@ public class Interpreter : NodeVisitor
             TokenType.Plus => Visit(node.Left) + Visit(node.Right),
             TokenType.Minus => Visit(node.Left) - Visit(node.Right),
             TokenType.Multiply => Visit(node.Left) * Visit(node.Right),
-            TokenType.Divide => Visit(node.Left) / Visit(node.Right),
+            TokenType.IntegerDivide => Visit(node.Left) / Visit(node.Right),
+            TokenType.RealDivide => Visit(node.Left) / Visit(node.Right),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -47,31 +49,58 @@ public class Interpreter : NodeVisitor
         return node.Token.ValueAsInt!.Value;
     }
 
-    private void VisitNoOpNode(NoOpNode node)
+    private int VisitNoOpNode(NoOpNode node)
     {
         // No operation to evaluate.
+
+        return 0;
     }
     
-    private void VisitCompoundNode(CompoundNode node)
+    private int VisitCompoundNode(CompoundNode node)
     {
         foreach (var childNode in node.Children)
         {
             Visit(childNode);
         }
+        
+        return 0;
     }
 
-    private void VisitAssignNode(AssignNode node)
+    private int VisitAssignNode(AssignNode node)
     {
         _globalScope.Add(node.Left.GetValue(), Visit(node.Right));
+        
+        return 0;
     }
     
-    private string VisitVariableNode(VariableNode node)
+    private int VisitVariableNode(VariableNode node)
     {
         if (_globalScope.TryGetValue(node.Value, out _))
         {
             throw new InvalidOperationException($"{node.Value} is already defined");
         }
         
-        return node.Value;
+        return 0;
+    }
+    
+    private int VisitBlockNode(BlockNode node)
+    {
+        foreach (var declaration in node.Declarations)
+        {
+            Visit(declaration);
+        }
+
+        return 0;
+    }
+    
+    private int VisitProgramNode(ProgramNode node)
+    {
+        return Visit(node.Block);
+    }
+    
+    private int VisitVarDeclNode(VarDeclNode declNode)
+    {
+        // Do nothing
+        return 0;
     }
 }

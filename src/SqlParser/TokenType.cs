@@ -7,7 +7,7 @@ public enum TokenType
     Plus,
     Minus,
     Multiply,
-    Divide,
+    IntegerDivide,
     LParen,
     RParen,
     EOF,
@@ -16,7 +16,15 @@ public enum TokenType
     End,
     Semi,
     Assign,
-    Id
+    Id,
+    Program,
+    VarDecl,
+    Real,
+    RealDivide,
+    Comma,
+    Colon,
+    IntegerConst,
+    RealConst
 }
 
 public static class TokenTypeExtensions
@@ -25,20 +33,28 @@ public static class TokenTypeExtensions
     {
         return tokenType switch
         {
-            TokenType.Integer => tokenType.ToString(),
+            TokenType.Integer => "INTEGER",
             TokenType.Plus => "+",
             TokenType.Minus => "-",
             TokenType.Multiply => "*",
-            TokenType.Divide => "/",
+            TokenType.IntegerDivide => "/",
             TokenType.LParen => "(",
             TokenType.RParen => ")",
-            TokenType.EOF => tokenType.ToString(),
+            TokenType.EOF => "EOF",
             TokenType.Dot => ".",
             TokenType.Begin => "BEGIN",
             TokenType.End => "END",
             TokenType.Semi => ";",
             TokenType.Assign => ":=",
             TokenType.Id => "ID",
+            TokenType.Program => "PROGRAM",
+            TokenType.VarDecl => "VAR_DECL",
+            TokenType.Real => "REAL",
+            TokenType.RealDivide => "DIV",
+            TokenType.Comma => ",",
+            TokenType.Colon => ":",
+            TokenType.IntegerConst => "INTEGER_CONST",
+            TokenType.RealConst => "REAL_CONST",
             _ => throw new ArgumentOutOfRangeException(nameof(tokenType), tokenType, null)
         };
     }
