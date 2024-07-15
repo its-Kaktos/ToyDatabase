@@ -34,15 +34,20 @@ var interpreter = new Interpreter(parser);
 
 try
 {
-    // parser.Parse().PrettyPrint();
+    new Parser(new Lexer(input)).Parse().PrettyPrint();
+    Console.WriteLine();
+    Console.WriteLine();
 
     var sb = new StringBuilder();
+    sb.Append("{ ");
     foreach (var (key, value) in interpreter.Evaluate())
     {
         sb.Append(key);
         sb.Append(" = ");
-        sb.Append(value);
+        sb.Append(value ?? "NULL!");
+        sb.Append("; ");
     }
+    sb.Append(" }");
 
     Console.WriteLine(sb.ToString());
 }

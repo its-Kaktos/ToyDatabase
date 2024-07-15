@@ -8,16 +8,13 @@ public abstract class NodeVisitor
 {
     private static readonly Dictionary<Type, MethodInfo[]> MethodInfosMap = new();
 
-    protected int Visit(IAST node)
+    protected object? Visit(IAST node)
     {
         var m = GetMethodEndingWith(node.GetType().Name);
         if (m is null) throw new InvalidOperationException($"No Visit{node.GetType()} method");
-
-        m.Invoke(this, [node]);
         var result = m.Invoke(this, [node]);
-        if (result is null) throw new UnreachableException("How TF the result is null?");
 
-        return (int)result;
+        return result;
     }
 
     private MethodInfo? GetMethodEndingWith(string endsWith)

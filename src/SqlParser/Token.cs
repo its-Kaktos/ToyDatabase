@@ -37,10 +37,10 @@ public record Token
 
         switch (Type)
         {
-            case TokenType.Integer:
+            case TokenType.IntegerConst:
                 ValueAsInt = int.Parse(Value);
                 break;
-            case TokenType.Real:
+            case TokenType.RealConst:
                 ValueAsFloat = float.Parse(Value!);
                 break;
         }
