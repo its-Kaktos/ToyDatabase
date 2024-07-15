@@ -1,11 +1,12 @@
-using System.Xml;
 using SqlParser.Nodes;
 
 namespace SqlParser;
 
+// ReSharper disable UnusedMember.Local
 public class Interpreter : NodeVisitor
 {
     private readonly Parser _parser;
+    private readonly Dictionary<string, int> _globalScope = new();
 
     public Interpreter(Parser parser)
     {
@@ -37,7 +38,6 @@ public class Interpreter : NodeVisitor
             TokenType.Minus => Visit(node.Left) - Visit(node.Right),
             TokenType.Multiply => Visit(node.Left) * Visit(node.Right),
             TokenType.Divide => Visit(node.Left) / Visit(node.Right),
-            TokenType.Power => (int)Math.Pow(Visit(node.Left), Visit(node.Right)),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -45,5 +45,33 @@ public class Interpreter : NodeVisitor
     private int VisitNumberNode(NumberNode node)
     {
         return node.Token.ValueAsInt!.Value;
+    }
+
+    private void VisitNoOpNode(NoOpNode node)
+    {
+        // No operation to evaluate.
+    }
+    
+    private void VisitCompoundNode(CompoundNode node)
+    {
+        foreach (var childNode in node.Children)
+        {
+            Visit(childNode);
+        }
+    }
+
+    private void VisitAssignNode(AssignNode node)
+    {
+        _globalScope.Add(node.Left.GetValue(), Visit(node.Right));
+    }
+    
+    private string VisitVariableNode(VariableNode node)
+    {
+        if (_globalScope.TryGetValue(node.Value, out _))
+        {
+            throw new InvalidOperationException($"{node.Value} is already defiend");
+        }
+        
+        return node.Value;
     }
 }

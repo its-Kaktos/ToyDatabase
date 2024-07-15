@@ -1,12 +1,37 @@
+using System.Collections.Frozen;
 using SqlParser.Nodes;
 
 namespace SqlParser;
 
-// Grammar:
-// expr :   term ( (PLUS | MINUS) term)*
-// term :   power ( (MUL | DIV) power)*
-// power :  factor ( (power) factor)*
-// factor : (PLUS | MINUS) factor | INTEGER | LParen factor RParen 
+/*
+Grammar:
+program : compound_statement DOT
+
+compound_statement : BEGIN statement_list END
+
+statement_list : statement
+                | statement SEMI statement_list
+
+statement : compound_statement
+            | assignment_statement
+            | empty
+
+assignment_statement : variable ASSIGN expr
+
+empty :
+
+expr: term ((PLUS | MINUS) term)*
+
+term: factor ((MUL | DIV) factor)*
+
+factor : PLUS factor
+        | MINUS factor
+        | INTEGER
+        | LPAREN expr RPAREN
+        | variable
+
+variable: ID
+ */
 public class Parser
 {
     private readonly Lexer _lexer;
@@ -20,17 +45,72 @@ public class Parser
 
     public IAST Parse()
     {
-        // expr   : term ((PLUS | MINUS) term)*
-        // term   : factor ((MUL | DIV) factor)*
-        // factor : INTEGER
-        return GetExpr();
+        return GetProgram();
     }
 
-    private void Eat(TokenType tokenType)
+    // program : compound_statement DOT
+    private IAST GetProgram()
     {
-        if (_currentToken.Type != tokenType) throw new InvalidOperationException("Invalid syntax.");
+        var result = GetCompoundStatement();
+        Eat(TokenType.Dot);
 
-        _currentToken = _lexer.NextToken();
+        return result;
+    }
+
+    // compound_statement : BEGIN statement_list END
+    private IAST GetCompoundStatement()
+    {
+        Eat(TokenType.Begin);
+        var nodes = GetStatementList();
+        Eat(TokenType.End);
+
+        return new CompoundNode(nodes);
+    }
+
+    // statement_list : statement
+    // | statement SEMI statement_list
+    private List<IAST> GetStatementList()
+    {
+        var result = new List<IAST> { GetStatement() };
+
+        while (_currentToken.Type == TokenType.Semi)
+        {
+            Eat(TokenType.Semi);
+            result.Add(GetStatement());
+        }
+
+        if (_currentToken.Type == TokenType.Id) throw new InvalidOperationException("Invalid syntax");
+
+        return result;
+    }
+
+    // statement : compound_statement
+    // | assignment_statement
+    // | empty
+    private IAST GetStatement()
+    {
+        return _currentToken.Type switch
+        {
+            TokenType.Begin => GetCompoundStatement(),
+            TokenType.Id => GetAssignmentStatement(),
+            _ => GetEmpty()
+        };
+    }
+
+    // assignment_statement : variable ASSIGN expr
+    private IAST GetAssignmentStatement()
+    {
+        var left = GetVariable();
+        var op = _currentToken;
+        Eat(TokenType.Assign);
+
+        return new AssignNode(left, op, GetExpr());
+    }
+
+    // empty :
+    private IAST GetEmpty()
+    {
+        return NoOpNode.Instance;
     }
 
     // expr : term ( (PLUS | MINUS) term)*
@@ -57,10 +137,10 @@ public class Parser
         return node;
     }
 
-    // term : power ( (MUL | DIV) power)*
+    // term : factor ( (MUL | DIV) factor)*
     private IAST GetTerm()
     {
-        var node = GetPower();
+        var node = GetFactor();
 
         while (_currentToken.Type is TokenType.Divide or TokenType.Multiply)
         {
@@ -75,28 +155,17 @@ public class Parser
                     break;
             }
 
-            node = new BinaryOperator(node, op, GetPower());
-        }
-
-        return node;
-    }
-
-    // power : factor ( (power) factor)*
-    private IAST GetPower()
-    {
-        var node = GetFactor();
-        
-        while (_currentToken.Type is TokenType.Power)
-        {
-            var op = _currentToken;
-            Eat(TokenType.Power);
             node = new BinaryOperator(node, op, GetFactor());
         }
 
         return node;
     }
 
-    // factor : (PLUS | MINUS) factor | INTEGER | LParen factor RParen 
+    // factor : PLUS factor
+    // | MINUS factor
+    // | INTEGER
+    // | LPAREN expr RPAREN
+    // | variable
     private IAST GetFactor()
     {
         switch (_currentToken.Type)
@@ -124,8 +193,27 @@ public class Parser
                 Eat(TokenType.RParen);
                 return result;
             }
+            case TokenType.Id:
+                return GetVariable();
             default:
                 throw new InvalidOperationException($"{_currentToken.Type} is not a valid Factor");
         }
+    }
+
+    // variable: ID
+    private IAST GetVariable()
+    {
+        var result = new VariableNode(_currentToken);
+        Eat(TokenType.Id);
+        
+        
+        return result;
+    }
+
+    private void Eat(TokenType tokenType)
+    {
+        if (_currentToken.Type != tokenType) throw new InvalidOperationException("Invalid syntax.");
+
+        _currentToken = _lexer.NextToken();
     }
 }

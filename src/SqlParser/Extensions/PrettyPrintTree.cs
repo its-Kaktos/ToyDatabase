@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using SqlParser.Nodes;
 
-namespace SqlParser;
+namespace SqlParser.Extensions;
 
 public enum Color
 {

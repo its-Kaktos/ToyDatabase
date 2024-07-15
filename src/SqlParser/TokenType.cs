@@ -10,8 +10,13 @@ public enum TokenType
     Divide,
     LParen,
     RParen,
-    Power,
-    EOF
+    EOF,
+    Dot,
+    Begin,
+    End,
+    Semi,
+    Assign,
+    Id
 }
 
 public static class TokenTypeExtensions
@@ -27,8 +32,13 @@ public static class TokenTypeExtensions
             TokenType.Divide => "/",
             TokenType.LParen => "(",
             TokenType.RParen => ")",
-            TokenType.Power => "*",
             TokenType.EOF => tokenType.ToString(),
+            TokenType.Dot => ".",
+            TokenType.Begin => "BEGIN",
+            TokenType.End => "END",
+            TokenType.Semi => ";",
+            TokenType.Assign => ":=",
+            TokenType.Id => "ID",
             _ => throw new ArgumentOutOfRangeException(nameof(tokenType), tokenType, null)
         };
     }
