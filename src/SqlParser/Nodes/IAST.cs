@@ -1,4 +1,4 @@
-namespace SqlParser;
+namespace SqlParser.Nodes;
 
 public interface IAST
 {

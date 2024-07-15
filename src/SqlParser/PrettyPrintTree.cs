@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using SqlParser.Nodes;
 
 namespace SqlParser;
 
