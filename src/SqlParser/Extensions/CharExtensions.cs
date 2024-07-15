@@ -5,7 +5,8 @@ public static class CharExtensions
     public static bool IsAlphabetical(this char c)
     {
         return c is >= 'a' and <= 'z'
-            or >= 'A' and <= 'Z';
+            or >= 'A' and <= 'Z'
+            or '_';
     }
 
     public static bool IsAlphanumeric(this char c)

@@ -5,7 +5,9 @@ public record VariableNode : IAST
     public VariableNode(Token op)
     {
         Operator = op;
-        Value = op.Value!;
+        // Variables in pascal are case-insensitive
+        // so make them lower for easier clash checking.
+        Value = op.Value!.ToLower();
     }
 
     public Token Operator { get; init; }

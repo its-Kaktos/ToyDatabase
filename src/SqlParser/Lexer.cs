@@ -8,11 +8,11 @@ public class Lexer
     private readonly string _src;
     private int _position;
     private char? _currentCharacter;
-    private const string MathOperations = "+-/*";
+    private const string MathOperations = "+-*";
 
     private static readonly FrozenDictionary<string, Token> ReservedKeywords = new Dictionary<string, Token>
     {
-        { "BEGIN", new Token(TokenType.Begin) }, { "END", new Token(TokenType.End) }
+        { "begin", new Token(TokenType.Begin) }, { "end", new Token(TokenType.End) }, { "div", new Token(TokenType.Divide) }
     }.ToFrozenDictionary();
 
     public Lexer(string src)
@@ -98,7 +98,6 @@ public class Lexer
         var token = _currentCharacter switch
         {
             '*' => new Token(TokenType.Multiply),
-            '/' => new Token(TokenType.Divide),
             '+' => new Token(TokenType.Plus),
             '-' => new Token(TokenType.Minus),
             _ => throw new InvalidOperationException($"{_currentCharacter} is not a valid math operator.")
@@ -134,7 +133,7 @@ public class Lexer
             Advance();
         }
         var length = endPosition is -1 ? _src.Length - 1 - startPosition : endPosition - startPosition + 1;
-        var tokenValue = _src.Substring(startPosition, length);
+        var tokenValue = _src.Substring(startPosition, length).ToLower();
 
         return ReservedKeywords.TryGetValue(tokenValue, out var result) ? result : new Token(TokenType.Id, tokenValue);
     }

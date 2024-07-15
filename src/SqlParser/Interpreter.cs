@@ -69,7 +69,7 @@ public class Interpreter : NodeVisitor
     {
         if (_globalScope.TryGetValue(node.Value, out _))
         {
-            throw new InvalidOperationException($"{node.Value} is already defiend");
+            throw new InvalidOperationException($"{node.Value} is already defined");
         }
         
         return node.Value;

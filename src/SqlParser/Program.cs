@@ -9,10 +9,10 @@ var input = """
             
                 BEGIN
                     number := 2;
-                    a := number;
-                    b := 10 * a + 10 * number / 4;
-                    c := a - - b
-                END;
+                    _a := NumBer;
+                    B := 10 * _a + 10 * NUMBER DiV 4;
+                    c := _a - - b
+                end;
             
                 x := 11;
             END.
