@@ -1,41 +1,18 @@
-using System.Text;
-
 namespace SqlParser;
 
 public record Token
 {
-    public static readonly Token EofToken = new(TokenType.EOF);
-
-    public Token(TokenType Type, string? Value = null)
+    public Token(TokenType type)
     {
-        this.Type = Type;
-        this.Value = Value;
-        parseValueBasedOnType();
+        Type = type;
+    }
+
+    public Token(TokenType type, string? value)
+    {
+        Type = type;
+        Value = value;
     }
 
     public TokenType Type { get; init; }
-    public string? Value { get; init; }
-
-    public int? ValueAsInt { get; private set; }
-
-    public override string ToString()
-    {
-        var sb = new StringBuilder()
-            .Append("Token(")
-            .Append(Type.ToString());
-
-        if (Value is not null) sb.Append(',').Append(Value);
-        sb.Append(')');
-
-        return sb.ToString();
-    }
-
-    private void parseValueBasedOnType()
-    {
-        ValueAsInt = Type switch
-        {
-            TokenType.Integer => int.Parse(Value!),
-            _ => ValueAsInt
-        };
-    }
+    public string? Value { get; set; }
 }

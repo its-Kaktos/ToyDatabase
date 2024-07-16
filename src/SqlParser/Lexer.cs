@@ -1,3 +1,6 @@
+using System.Collections.Frozen;
+using SqlParser.Extensions;
+
 namespace SqlParser;
 
 public class Lexer
@@ -5,11 +8,17 @@ public class Lexer
     private readonly string _src;
     private int _position;
     private char? _currentCharacter;
-    private const string MathOperations = "+-/*";
+
+    private FrozenDictionary<string, Token> _reservedKeywords = new Dictionary<string, Token>
+    {
+        { "select", new Token(TokenType.Select) },
+        { "from", new Token(TokenType.From) }
+    }.ToFrozenDictionary();
 
     public Lexer(string src)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(src);
+        if (src.Length <= 0) throw new ArgumentException("Length can not be equal or less than 0", nameof(src));
+
         _src = src;
         _position = 0;
         _currentCharacter = _src[_position];
@@ -25,42 +34,22 @@ public class Lexer
                 continue;
             }
 
-            if (MathOperations.Contains(_currentCharacter.Value))
+            if (_currentCharacter is '*')
             {
-                // Parse and return math operation
-                var mathOperator = ParseMathOperator();
                 Advance();
-                return mathOperator;
+                return new Token(TokenType.Name, "*");
             }
+            if (!_currentCharacter.IsAlphanumeric()) throw new InvalidOperationException($"{_currentCharacter} is not a valid character");
 
-            if (char.IsDigit(_currentCharacter.Value))
-            {
-                return ParseInteger();
-            }
-
-            switch (_currentCharacter)
-            {
-                case '(':
-                    Advance();
-                    return new Token(TokenType.LParen);
-                case ')':
-                    Advance();
-                    return new Token(TokenType.RParen);
-                case '^':
-                    Advance();
-                    return new Token(TokenType.Power);
-                default:
-                    throw new InvalidOperationException($"{_currentCharacter} is not a valid token.");
-            }
+            return GetIdentifier();
         }
 
-        return Token.EofToken;
+        return new Token(TokenType.EOF);
     }
 
     private void Advance()
     {
         _position++;
-
         if (_position >= _src.Length)
         {
             _currentCharacter = null;
@@ -68,6 +57,17 @@ public class Lexer
         }
 
         _currentCharacter = _src[_position];
+    }
+
+    private char? PeekPrevious()
+    {
+        var position = _position - 1;
+        if (position <= _src.Length)
+        {
+            return _src[position];
+        }
+
+        return null;
     }
 
     private void SkipWhiteSpace()
@@ -78,30 +78,20 @@ public class Lexer
         }
     }
 
-    private Token ParseMathOperator()
-    {
-        return _currentCharacter switch
-        {
-            '*' => new Token(TokenType.Multiply),
-            '/' => new Token(TokenType.Divide),
-            '+' => new Token(TokenType.Plus),
-            '-' => new Token(TokenType.Minus),
-            _ => throw new InvalidOperationException($"{_currentCharacter} is not a valid math operator.")
-        };
-    }
-
-    private Token ParseInteger()
+    private Token GetIdentifier()
     {
         var startPosition = _position;
         var endPosition = -1;
-        while (_currentCharacter is not null && char.IsDigit(_currentCharacter.Value))
+        while (_currentCharacter is not null && _currentCharacter.IsAlphanumeric())
         {
             endPosition = _position;
             Advance();
         }
 
         var length = endPosition is -1 ? _src.Length - 1 - startPosition : endPosition - startPosition + 1;
+        var tokenValue = _src.Substring(startPosition, length);
 
-        return new Token(TokenType.Integer, _src.Substring(startPosition, length));
+        return _reservedKeywords.TryGetValue(tokenValue.ToLower(), out var result) ? result : 
+                new Token(TokenType.Name, tokenValue);
     }
 }

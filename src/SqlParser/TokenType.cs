@@ -1,16 +1,12 @@
 namespace SqlParser;
 
-// ReSharper disable once InconsistentNaming
+// ReSharper disable InconsistentNaming
 public enum TokenType
 {
-    Integer,
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    LParen,
-    RParen,
-    Power,
+    Select,
+    From,
+    Name,
+    WhiteSpace,
     EOF
 }
 
@@ -20,15 +16,12 @@ public static class TokenTypeExtensions
     {
         return tokenType switch
         {
-            TokenType.Integer => tokenType.ToString(),
-            TokenType.Plus => "+",
-            TokenType.Minus => "-",
-            TokenType.Multiply => "*",
-            TokenType.Divide => "/",
-            TokenType.LParen => "(",
-            TokenType.RParen => ")",
-            TokenType.Power => "*",
+            
             TokenType.EOF => tokenType.ToString(),
+            TokenType.Select => "SELECT",
+            TokenType.From => "FROM",
+            TokenType.Name => "NAME",
+            TokenType.WhiteSpace => "WHITE_SPACE",
             _ => throw new ArgumentOutOfRangeException(nameof(tokenType), tokenType, null)
         };
     }

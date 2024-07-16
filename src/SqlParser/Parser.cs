@@ -1,10 +1,15 @@
+using SqlParser.Nodes;
+
 namespace SqlParser;
 
 // Grammar:
-// expr :   term ( (PLUS | MINUS) term)*
-// term :   power ( (MUL | DIV) power)*
-// power :  factor ( (power) factor)*
-// factor : (PLUS | MINUS) factor | INTEGER | LParen factor RParen 
+// SELECT: SELECT selectExpression FROM tableExpression
+// 
+// selectExpression: *
+// 
+// tableExpression: name
+// 
+// name: A-Z 0-9
 public class Parser
 {
     private readonly Lexer _lexer;
@@ -13,117 +18,62 @@ public class Parser
     public Parser(Lexer lexer)
     {
         _lexer = lexer;
-        _currentToken = lexer.NextToken();
+        _currentToken = _lexer.NextToken();
     }
 
     public IAST Parse()
     {
-        // expr   : term ((PLUS | MINUS) term)*
-        // term   : factor ((MUL | DIV) factor)*
-        // factor : INTEGER
-        return GetExpr();
+        return GetSelect();
     }
 
+    // SELECT: SELECT selectExpression FROM tableExpression
+    private SelectNode GetSelect()
+    {
+        Eat(TokenType.Select);
+        var selectExpr = GetSelectExpression();
+        Eat(TokenType.From);
+        var tableExpr = GetTableExpression();
+
+        return new SelectNode(TokenType.Select, selectExpr, tableExpr);
+    }
+
+    // selectExpression: *
+    private SelectExpressionNode GetSelectExpression()
+    {
+        var current = _currentToken;
+        Eat(TokenType.Name);
+        if (current.Value is not "*")
+        {
+            throw new InvalidOperationException($"{_currentToken.Value} is not a valid select expression.");
+        }
+
+        return new SelectExpressionNode(current.Type, current.Value!);
+    }
+    
+    // tableExpression: name
+    private TableExpressionNode GetTableExpression()
+    {
+        var current = GetName();
+
+        return new TableExpressionNode(current.Type, current.Value!);
+    }
+    
+    // name: A-Z 0-9
+    private Token GetName()
+    {
+        var current = _currentToken;
+        Eat(TokenType.Name);
+
+        return current;
+    }
+    
     private void Eat(TokenType tokenType)
     {
-        if (_currentToken.Type != tokenType) throw new InvalidOperationException("Invalid syntax.");
+        if (_currentToken.Type != tokenType)
+        {
+            throw new InvalidOperationException($"{_currentToken.Type} is not valid at this position.");
+        }
 
         _currentToken = _lexer.NextToken();
-    }
-
-    // expr : term ( (PLUS | MINUS) term)*
-    private IAST GetExpr()
-    {
-        var node = GetTerm();
-
-        while (_currentToken.Type is TokenType.Plus or TokenType.Minus)
-        {
-            var op = _currentToken;
-            switch (_currentToken.Type)
-            {
-                case TokenType.Plus:
-                    Eat(TokenType.Plus);
-                    break;
-                case TokenType.Minus:
-                    Eat(TokenType.Minus);
-                    break;
-            }
-
-            node = new BinaryOperator(node, op, GetTerm());
-        }
-
-        return node;
-    }
-
-    // term : power ( (MUL | DIV) power)*
-    private IAST GetTerm()
-    {
-        var node = GetPower();
-
-        while (_currentToken.Type is TokenType.Divide or TokenType.Multiply)
-        {
-            var op = _currentToken;
-            switch (_currentToken.Type)
-            {
-                case TokenType.Divide:
-                    Eat(TokenType.Divide);
-                    break;
-                case TokenType.Multiply:
-                    Eat(TokenType.Multiply);
-                    break;
-            }
-
-            node = new BinaryOperator(node, op, GetPower());
-        }
-
-        return node;
-    }
-
-    // power : factor ( (power) factor)*
-    private IAST GetPower()
-    {
-        var node = GetFactor();
-        
-        while (_currentToken.Type is TokenType.Power)
-        {
-            var op = _currentToken;
-            Eat(TokenType.Power);
-            node = new BinaryOperator(node, op, GetFactor());
-        }
-
-        return node;
-    }
-
-    // factor : (PLUS | MINUS) factor | INTEGER | LParen factor RParen 
-    private IAST GetFactor()
-    {
-        switch (_currentToken.Type)
-        {
-            case TokenType.Plus:
-            {
-                Eat(TokenType.Plus);
-                return new UnaryOperator(new Token(TokenType.Plus), GetFactor());
-            }
-            case TokenType.Minus:
-            {
-                Eat(TokenType.Minus);
-                return new UnaryOperator(new Token(TokenType.Minus), GetFactor());
-            }
-            case TokenType.Integer:
-            {
-                var current = _currentToken;
-                Eat(TokenType.Integer);
-                return new NumberNode(current);
-            }
-            case TokenType.LParen:
-            {
-                Eat(TokenType.LParen);
-                var result = GetExpr();
-                Eat(TokenType.RParen);
-                return result;
-            }
-            default:
-                throw new InvalidOperationException($"{_currentToken.Type} is not a valid Factor");
-        }
     }
 }

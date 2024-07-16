@@ -8,153 +8,19 @@ public class LexerTests
     {
         new object[]
         {
-            "1", new[]
+            "SELECT", new[]
             {
-                new Token(TokenType.Integer, "1")
+                new Token(TokenType.Select),
             }
         },
         new object[]
         {
-            "12", new[]
+            "SELECT * FROM TABLENAME", new[]
             {
-                new Token(TokenType.Integer, "12")
-            }
-        },
-        new object[]
-        {
-            "12+", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus)
-            }
-        },
-        new object[]
-        {
-            "12+3", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3")
-            }
-        },
-        new object[]
-        {
-            "12+3-", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus)
-            }
-        },
-        new object[]
-        {
-            "12+3-4", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4")
-            }
-        },
-        new object[]
-        {
-            "12+3-4*", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4"),
-                new Token(TokenType.Multiply)
-            }
-        },
-        new object[]
-        {
-            "12+3-4*8", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4"),
-                new Token(TokenType.Multiply),
-                new Token(TokenType.Integer, "8")
-            }
-        },
-        new object[]
-        {
-            "12+3-4*8/", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4"),
-                new Token(TokenType.Multiply),
-                new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide)
-            }
-        },
-        new object[]
-        {
-            "12+3-4*8/9", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4"),
-                new Token(TokenType.Multiply),
-                new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
-                new Token(TokenType.Integer, "9")
-            }
-        },
-        new object[]
-        {
-            "12+3 -4*8/ 9", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4"),
-                new Token(TokenType.Multiply),
-                new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
-                new Token(TokenType.Integer, "9")
-            }
-        },
-        new object[]
-        {
-            "12 + 3 -4*8/ 9", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4"),
-                new Token(TokenType.Multiply),
-                new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
-                new Token(TokenType.Integer, "9")
-            }
-        },
-        new object[]
-        {
-            "12 + 3 -4* 8/ 9", new[]
-            {
-                new Token(TokenType.Integer, "12"),
-                new Token(TokenType.Plus),
-                new Token(TokenType.Integer, "3"),
-                new Token(TokenType.Minus),
-                new Token(TokenType.Integer, "4"),
-                new Token(TokenType.Multiply),
-                new Token(TokenType.Integer, "8"),
-                new Token(TokenType.Divide),
-                new Token(TokenType.Integer, "9")
+                new Token(TokenType.Select),
+                new Token(TokenType.Name, "*"),
+                new Token(TokenType.From),
+                new Token(TokenType.Name, "TABLENAME"),
             }
         }
     };
@@ -167,7 +33,7 @@ public class LexerTests
 
         var actual = new List<Token>();
         var next = sut.NextToken();
-        while (next != Token.EofToken)
+        while (next.Type != TokenType.EOF)
         {
             actual.Add(next);
             next = sut.NextToken();
