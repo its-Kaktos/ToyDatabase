@@ -198,7 +198,7 @@ internal partial class PrettyPrintTree<TNode>
             }
             else
             {
-                toPrint[0][0] = toPrint[0][0]!.Substring(0, toPrint[0][0]!.Length - 1) + '│';
+                toPrint[0][0] = string.Concat(toPrint[0][0]!.AsSpan(0, toPrint[0][0]!.Length - 1), "│");
                 pipePos = toPrint[0][0]!.Length - 1;
             }
 

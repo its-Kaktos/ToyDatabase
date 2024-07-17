@@ -3,20 +3,49 @@
 // https://forcedotcom.github.io/phoenix/index.html#select_expression
 
 using SqlParser;
+using SqlParser.BtreeImpl;
 
-var input = """
-            SELECT * FROM tableNameHere
-            """;
-var lexer = new Lexer(input);
-var parser = new Parser(lexer);
-var ast = parser.Parse();
+// var input = """
+//             SELECT * FROM tableNameHere
+//             """;
+// var lexer = new Lexer(input);
+// var parser = new Parser(lexer);
+// var ast = parser.Parse();
+// try
+// {
+//     ast.PrettyPrint();
+//     
+// }
+// catch (Exception e)
+// {
+//     Console.WriteLine(e);
+//     throw;
+// }
 
-try
+var leftLeaf = new BtreeNode()
 {
-    ast.PrettyPrint();
-}
-catch (Exception e)
+    Keys = [1]
+};
+
+var middleLeaf = new BtreeNode()
 {
-    Console.WriteLine(e);
-    throw;
-}
+    Keys = [2]
+};
+
+var rightLeaf = new BtreeNode()
+{
+    Keys = [3, 4]
+};
+
+var root = new BtreeNode()
+{
+    Keys = [2, 2],
+    Child = [leftLeaf, middleLeaf, rightLeaf]
+};
+
+var btree = new Btree()
+{
+    Root = root
+};
+
+btree.PrettyPrint();
