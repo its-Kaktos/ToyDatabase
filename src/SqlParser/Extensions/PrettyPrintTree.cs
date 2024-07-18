@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using SqlParser.BtreeImpl;
 using SqlParser.Nodes;
 
 namespace SqlParser;
@@ -13,7 +14,8 @@ public enum Color
     Pink,
     LightBlue,
     White,
-    None
+    None,
+    Black
 }
 
 public static class PrettyPrintAst
@@ -28,15 +30,34 @@ public static class PrettyPrintAst
 
         pt.Display(parentNode);
     }
+    
+    public static void PrettyPrint(this Btree tree, Color color = Color.None)
+    {
+        var pt = new PrettyPrintTree<BtreeNode>(
+            getChildren: node => node.Child,
+            getVal: node => ListToString(node.Keys),
+            color,
+            border: true
+        );
+
+        pt.Display(tree.Root);
+    }
+
+    private static string ListToString(List<int> values)
+    {
+        var sb = new StringBuilder();
+        sb.AppendJoin(" - ", values);
+
+        return sb.ToString();
+    }
 }
 
 // https://github.com/AharonSambol/PrettyPrintTreeCSharp
 internal partial class PrettyPrintTree<TNode>
 {
-    private static readonly Regex SlashNRegex = MyRegex();
-
     private static readonly Dictionary<Color, string> ColorToNum = new()
     {
+        { Color.Black, "40" },
         { Color.Red, "41" },
         { Color.Green, "42" },
         { Color.Yellow, "43" },
@@ -45,6 +66,8 @@ internal partial class PrettyPrintTree<TNode>
         { Color.LightBlue, "46" },
         { Color.White, "47" },
     };
+
+    private static readonly Regex SlashNRegex = MyRegex();
 
     private readonly Func<TNode, IEnumerable<TNode?>> _getChildren;
     private readonly Func<TNode, string> _getNodeVal;

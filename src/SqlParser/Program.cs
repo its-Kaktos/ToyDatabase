@@ -22,30 +22,68 @@ using SqlParser.BtreeImpl;
 //     throw;
 // }
 
-var leftLeaf = new BtreeNode()
-{
-    Keys = [1]
-};
+// var leftLeaf = new BtreeNode()
+// {
+//     Keys = [1]
+// };
+//
+// var middleLeaf = new BtreeNode()
+// {
+//     Keys = [2]
+// };
+//
+// var rightLeaf = new BtreeNode()
+// {
+//     Keys = [3, 4]
+// };
+//
+// var root = new BtreeNode()
+// {
+//     Keys = [2, 2],
+//     Child = [leftLeaf, middleLeaf, rightLeaf]
+// };
+//
+// var btree = new Btree()
+// {
+//     Root = root
+// };
 
-var middleLeaf = new BtreeNode()
-{
-    Keys = [2]
-};
+var btree = CreateDefaultBtree();
 
-var rightLeaf = new BtreeNode()
-{
-    Keys = [3, 4]
-};
+btree.PrettyPrint(Color.Black);
 
-var root = new BtreeNode()
-{
-    Keys = [2, 2],
-    Child = [leftLeaf, middleLeaf, rightLeaf]
-};
 
-var btree = new Btree()
-{
-    Root = root
-};
+return;
 
-btree.PrettyPrint();
+Btree CreateDefaultBtree()
+{
+    return new Btree
+    {
+        Root = new BtreeNode()
+        {
+            Keys = [4],
+            Child =
+            [
+                new BtreeNode
+                {
+                    Keys = [2],
+                    Child =
+                    [
+                        new BtreeNode { Keys = [1] },
+                        new BtreeNode { Keys = [3, 4] },
+                    ]
+                },
+                new BtreeNode
+                {
+                    Keys = [5, 6],
+                    Child =
+                    [
+                        new BtreeNode { Keys = [5] },
+                        new BtreeNode { Keys = [5, 6] },
+                        new BtreeNode { Keys = [7, 8] },
+                    ]
+                },
+            ]
+        }
+    };
+}
