@@ -73,36 +73,36 @@ void InsertAndPrint(Btree bt, int key)
     Console.WriteLine("****************************************");
 }
 
-Btree CreateDefaultBtree()
-{
-    const int maxKeys = 4;
-    return new Btree(maxKeys)
-    {
-        Root = new BtreeNode(maxKeys)
-        {
-            Keys = [4],
-            Child =
-            [
-                new BtreeNode(maxKeys)
-                {
-                    Keys = [2],
-                    Child =
-                    [
-                        new BtreeNode(maxKeys) { Keys = [1] },
-                        new BtreeNode(maxKeys) { Keys = [3, 4] },
-                    ]
-                },
-                new BtreeNode(maxKeys)
-                {
-                    Keys = [5, 6],
-                    Child =
-                    [
-                        new BtreeNode(maxKeys) { Keys = [5] },
-                        new BtreeNode(maxKeys) { Keys = [5, 6] },
-                        new BtreeNode(maxKeys) { Keys = [7, 8] },
-                    ]
-                },
-            ]
-        }
-    };
-}
+// Btree CreateDefaultBtree()
+// {
+//     const int maxKeys = 4;
+//     return new Btree(maxKeys)
+//     {
+//         Root = new BtreeNode(maxKeys)
+//         {
+//             Keys = [4],
+//             Child =
+//             [
+//                 new BtreeNode(maxKeys)
+//                 {
+//                     Keys = [2],
+//                     Child =
+//                     [
+//                         new BtreeNode(maxKeys) { Keys = [1] },
+//                         new BtreeNode(maxKeys) { Keys = [3, 4] },
+//                     ]
+//                 },
+//                 new BtreeNode(maxKeys)
+//                 {
+//                     Keys = [5, 6],
+//                     Child =
+//                     [
+//                         new BtreeNode(maxKeys) { Keys = [5] },
+//                         new BtreeNode(maxKeys) { Keys = [5, 6] },
+//                         new BtreeNode(maxKeys) { Keys = [7, 8] },
+//                     ]
+//                 },
+//             ]
+//         }
+//     };
+// }

@@ -34,7 +34,7 @@ public static class PrettyPrintAst
     public static void PrettyPrint(this Btree tree, Color color = Color.None)
     {
         var pt = new PrettyPrintTree<BtreeNode>(
-            getChildren: node => node.Child,
+            getChildren: node => node.Children,
             getVal: node => ListToString(node.Keys),
             color,
             border: true
@@ -43,7 +43,7 @@ public static class PrettyPrintAst
         pt.Display(tree.Root);
     }
 
-    private static string ListToString(List<int> values)
+    private static string ListToString(IEnumerable<int> values)
     {
         var sb = new StringBuilder();
         sb.AppendJoin(" - ", values);

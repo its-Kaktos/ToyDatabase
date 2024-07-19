@@ -12,7 +12,7 @@ public class Btree
         Root = new BtreeNode(_maxNumberOfKeys);
     }
 
-    public BtreeNode Root { get; set; }
+    public BtreeNode Root { get; private set; }
 
     /// <summary>
     /// Searches the btree for the <paramref name="value"/>.
@@ -31,47 +31,34 @@ public class Btree
 
         if (node.IsKeysFull)
         {
-            var rootNode = BalanceTree(node);
-            Root = rootNode;
+            BalanceTree(node);
+            Root = GetParentNode(Root);
         }
     }
 
-    private BtreeNode BalanceTree(BtreeNode node)
+    private void BalanceTree(BtreeNode node)
     {
         var medianIndex = _maxNumberOfKeys / 2;
         var median = node.Keys[medianIndex];
-        var left = node.Keys[..medianIndex];
-        var right = node.Keys[(medianIndex + 1)..];
+        var leftNodeKeys = node.GetRangeKeys(..medianIndex);
+        var rightNodeKeys = node.GetRangeKeys((medianIndex + 1)..);
 
         var parentNode = node.ParentNode ?? new BtreeNode(_maxNumberOfKeys);
 
         // From now on, node is the left child.
-        node.Keys = left;
+        node.SetKeys(leftNodeKeys);
         node.ParentNode = parentNode;
 
-        var rightNode = new BtreeNode(_maxNumberOfKeys, parentNode)
+        var rightNode = new BtreeNode(_maxNumberOfKeys, parentNode);
+        rightNode.SetKeys(rightNodeKeys);
+
+        if (node.Children.Count != 0)
         {
-            Keys = right
-        };
+            var leftNodeChild = node.GetRangeChildren(..(medianIndex + 1));
+            var rightNodeChild = node.GetRangeChildren((medianIndex + 1)..);
 
-        if (node.Child.Count != 0)
-        {
-            var leftNodeChild = node.Child[..(medianIndex + 1)];
-            var rightNodeChild = node.Child[(medianIndex + 1)..];
-
-            node.Child = leftNodeChild;
-
-            foreach (var lcn in leftNodeChild)
-            {
-                lcn.ParentNode = node;
-            }
-
-            rightNode.Child = rightNodeChild;
-
-            foreach (var lcn in rightNodeChild)
-            {
-                lcn.ParentNode = rightNode;
-            }
+            node.SetChildren(leftNodeChild);
+            rightNode.SetChildren(rightNodeChild);
         }
 
         // Remove current node from children to add it again as left child.
@@ -80,10 +67,8 @@ public class Btree
 
         if (parentNode.IsKeysFull)
         {
-            return GetParentNode(BalanceTree(parentNode));
+           BalanceTree(parentNode);
         }
-
-        return GetParentNode(parentNode);
     }
 
     private BtreeNode GetParentNode(BtreeNode node)
@@ -108,11 +93,11 @@ public class Btree
             if (value > node.Keys[i]) continue;
 
             // Value is less that current key, search its child.
-            return SearchNodeForInsert(value, node.Child[i]);
+            return SearchNodeForInsert(value, node.Children[i]);
         }
 
         // Value is greater than all keys, search right most child
-        return SearchNodeForInsert(value, node.Child[node.Keys.Count]);
+        return SearchNodeForInsert(value, node.Children[node.Keys.Count]);
     }
 
     // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
@@ -128,7 +113,7 @@ public class Btree
             if (node.IsLeaf) return -1;
 
             // Value is less that current key, search its child.
-            return Search(value, node.Child[i]);
+            return Search(value, node.Children[i]);
         }
 
         // Value is greater than all keys, and there is no
@@ -136,6 +121,6 @@ public class Btree
         if (node.IsLeaf) return -1;
 
         // Value is greater than all keys, search right most child
-        return Search(value, node.Child[node.Keys.Count]);
+        return Search(value, node.Children[node.Keys.Count]);
     }
 }

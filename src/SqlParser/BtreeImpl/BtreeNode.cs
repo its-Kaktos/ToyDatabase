@@ -1,25 +1,36 @@
+using System.Collections.ObjectModel;
+
 namespace SqlParser.BtreeImpl;
 
 public record BtreeNode
 {
     private readonly int _maxKeysCount;
+    private List<int> _keys;
+    private List<BtreeNode> _children;
 
     public BtreeNode(int maxKeysCount, BtreeNode? parentNode = null)
     {
         _maxKeysCount = maxKeysCount;
-        Keys = [];
-        Child = [];
+        _keys = [];
+        _children = [];
         ParentNode = parentNode;
     }
+    
+    public IReadOnlyList<int> Keys
+    {
+        get => _keys;
+    }
 
-    // TODO Add methods to CRUD key and child(?). remove set accessor?
-    public List<int> Keys { get; set; }
-    public List<BtreeNode> Child { get; set; }
+    public IReadOnlyList<BtreeNode> Children
+    {
+        get => _children;
+    }
+
     public BtreeNode? ParentNode { get; set; }
 
     public bool IsLeaf
     {
-        get => Child.Count == 0;
+        get => Children.Count == 0;
     }
 
     public bool IsKeysFull
@@ -37,47 +48,72 @@ public record BtreeNode
     {
         var keyIndex = AddKeyInternal(key);
         
-        if (keyIndex >= Child.Count)
+        if (keyIndex >= Children.Count)
         {
-            Child.Add(leftChild);
+            _children.Add(leftChild);
         }
         else
         {
-            Child.Insert(keyIndex, leftChild);
+            _children.Insert(keyIndex, leftChild);
         }
 
         var rightChildIndex = keyIndex + 1;
-        if (key >= Child.Count)
+        if (key >= Children.Count)
         {
-            Child.Add(rightChild);
+            _children.Add(rightChild);
             return;
         }
         
-        Child.Insert(rightChildIndex, rightChild);
+        _children.Insert(rightChildIndex, rightChild);
     }
 
     public void RemoveChildByReference(BtreeNode node)
     {
-        for (var i = 0; i < Child.Count; i++)
+        for (var i = 0; i < Children.Count; i++)
         {
-            if (!ReferenceEquals(Child[i], node)) continue;
+            if (!ReferenceEquals(Children[i], node)) continue;
 
-            Child.RemoveAt(i);
+            _children.RemoveAt(i);
             break;
         }
+    }
+
+    public void SetKeys(List<int> keys)
+    {
+        _keys = keys;
+    }
+
+    public void SetChildren(List<BtreeNode> nodes)
+    {
+        _children = nodes;
+
+        foreach (var child in _children)
+        {
+            child.ParentNode = this;
+        }
+    }
+
+    public List<BtreeNode> GetRangeChildren(Range range)
+    {
+        return _children[range];
+    }
+    
+    public List<int> GetRangeKeys(Range range)
+    {
+        return _keys[range];
     }
     
     private int AddKeyInternal(int key)
     {
-        for (var i = 0; i < Keys.Count; i++)
+        for (var i = 0; i < _keys.Count; i++)
         {
-            if (key > Keys[i]) continue;
+            if (key > _keys[i]) continue;
 
-            Keys.Insert(i, key);
+            _keys.Insert(i, key);
             return i;
         }
 
-        Keys.Add(key);
-        return Keys.Count - 1;
+        _keys.Add(key);
+        return _keys.Count - 1;
     }
 }
