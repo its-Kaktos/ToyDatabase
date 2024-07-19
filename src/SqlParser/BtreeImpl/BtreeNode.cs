@@ -5,12 +5,14 @@ namespace SqlParser.BtreeImpl;
 public record BtreeNode
 {
     private readonly int _maxKeysCount;
+    private readonly int _minKeysCount;
     private List<int> _keys;
     private List<BtreeNode> _children;
 
     public BtreeNode(int maxKeysCount, BtreeNode? parentNode = null)
     {
         _maxKeysCount = maxKeysCount;
+        _minKeysCount = maxKeysCount / 2;
         _keys = [];
         _children = [];
         ParentNode = parentNode;
@@ -38,6 +40,11 @@ public record BtreeNode
         get => Keys.Count >= _maxKeysCount;
     }
 
+    public bool IsKeysLessThanMinimum
+    {
+        get => _keys.Count < _minKeysCount;
+    }
+    
     // TODO is there any better method to search? e.g binary search.
     public void AddKey(int key)
     {

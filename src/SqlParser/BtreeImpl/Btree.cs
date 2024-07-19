@@ -4,30 +4,32 @@ namespace SqlParser.BtreeImpl;
 
 public class Btree
 {
-    private readonly int _maxNumberOfKeys;
+    private readonly int _maxKeysCount;
 
-    public Btree(int maxNumberOfKeys)
+    public Btree(int maxKeysCount)
     {
-        _maxNumberOfKeys = maxNumberOfKeys;
-        Root = new BtreeNode(_maxNumberOfKeys);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maxKeysCount, 2);
+
+        _maxKeysCount = maxKeysCount;
+        Root = new BtreeNode(_maxKeysCount);
     }
 
     public BtreeNode Root { get; private set; }
 
     /// <summary>
-    /// Searches the btree for the <paramref name="value"/>.
+    /// Searches the btree for the <paramref name="key"/>.
     /// </summary>
-    /// <param name="value">Value to search for.</param>
-    /// <returns>The value if btree contains the <paramref name="value"/>, else <c>null</c></returns>
-    public int? Search(int value)
+    /// <param name="key">Value to search for.</param>
+    /// <returns>The value if btree contains the <paramref name="key"/>, else <c>null</c></returns>
+    public int? Search(int key)
     {
-        return Search(value, Root);
+        return Search(key, Root);
     }
 
-    public void Insert(int value)
+    public void Insert(int key)
     {
-        var node = SearchNodeForInsert(value, Root);
-        node.AddKey(value);
+        var node = SearchNodeUsingKey(key, Root);
+        node.AddKey(key);
 
         if (node.IsKeysFull)
         {
@@ -36,20 +38,27 @@ public class Btree
         }
     }
 
+    public void Delete(int key)
+    {
+        
+    }
+
+    // Tail recursive calls are never optimized in c#! : https://blog.objektkultur.de/about-tail-recursion-in-.net/
+    // You can see it is not optimized in the IL Viewer.
     private void BalanceTree(BtreeNode node)
     {
-        var medianIndex = _maxNumberOfKeys / 2;
+        var medianIndex = _maxKeysCount / 2;
         var median = node.Keys[medianIndex];
         var leftNodeKeys = node.GetRangeKeys(..medianIndex);
         var rightNodeKeys = node.GetRangeKeys((medianIndex + 1)..);
 
-        var parentNode = node.ParentNode ?? new BtreeNode(_maxNumberOfKeys);
+        var parentNode = node.ParentNode ?? new BtreeNode(_maxKeysCount);
 
         // From now on, node is the left child.
         node.SetKeys(leftNodeKeys);
         node.ParentNode = parentNode;
 
-        var rightNode = new BtreeNode(_maxNumberOfKeys, parentNode);
+        var rightNode = new BtreeNode(_maxKeysCount, parentNode);
         rightNode.SetKeys(rightNodeKeys);
 
         if (node.Children.Count != 0)
@@ -83,37 +92,37 @@ public class Btree
     
     // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
     // TODO Use the search method if possible.
-    private BtreeNode SearchNodeForInsert(int value, BtreeNode node)
+    private BtreeNode SearchNodeUsingKey(int key, BtreeNode node)
     {
         // If node is a leaf, it means we have found the node to insert our value into.
         if (node.IsLeaf) return node;
 
         for (var i = 0; i < node.Keys.Count; i++)
         {
-            if (value > node.Keys[i]) continue;
+            if (key > node.Keys[i]) continue;
 
             // Value is less that current key, search its child.
-            return SearchNodeForInsert(value, node.Children[i]);
+            return SearchNodeUsingKey(key, node.Children[i]);
         }
 
         // Value is greater than all keys, search right most child
-        return SearchNodeForInsert(value, node.Children[node.Keys.Count]);
+        return SearchNodeUsingKey(key, node.Children[node.Keys.Count]);
     }
 
     // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
-    private int? Search(int value, BtreeNode node)
+    private int? Search(int key, BtreeNode node)
     {
         for (var i = 0; i < node.Keys.Count; i++)
         {
-            if (value > node.Keys[i]) continue;
-            if (value == node.Keys[i]) return node.Keys[i];
+            if (key > node.Keys[i]) continue;
+            if (key == node.Keys[i]) return node.Keys[i];
 
             // Value is less than current key, and there is no
             // child to search for the Value in its Keys.
             if (node.IsLeaf) return -1;
 
             // Value is less that current key, search its child.
-            return Search(value, node.Children[i]);
+            return Search(key, node.Children[i]);
         }
 
         // Value is greater than all keys, and there is no
@@ -121,6 +130,6 @@ public class Btree
         if (node.IsLeaf) return -1;
 
         // Value is greater than all keys, search right most child
-        return Search(value, node.Children[node.Keys.Count]);
+        return Search(key, node.Children[node.Keys.Count]);
     }
 }
