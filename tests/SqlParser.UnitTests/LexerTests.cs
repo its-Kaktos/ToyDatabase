@@ -1,44 +1,36 @@
+using System.Text.Json;
 using FluentAssertions;
+using SqlParser.BtreeImpl;
 
 namespace SqlParser.UnitTests;
 
 public class LexerTests
 {
-    public static IEnumerable<object[]> NextShouldReturnValidTokenData => new List<object[]>
+    public static IEnumerable<object[]> NextShouldBeValidBtree => new List<object[]>
     {
         new object[]
         {
-            "SELECT", new[]
-            {
-                new Token(TokenType.Select),
-            }
-        },
-        new object[]
-        {
-            "SELECT * FROM TABLENAME", new[]
-            {
-                new Token(TokenType.Select),
-                new Token(TokenType.Name, "*"),
-                new Token(TokenType.From),
-                new Token(TokenType.Name, "TABLENAME"),
-            }
+            3,
+            new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+            """
+            {"Root":{"Keys":[4],"Children":[{"Keys":[2],"Children":[{"Keys":[1],"Children":[]},{"Keys":[3],"Children":[]}]},{"Keys":[6,8],"Children":[{"Keys":[5],"Children":[]},{"Keys":[7],"Children":[]},{"Keys":[9,10],"Children":[]}]}]}}
+            """,
+            
         }
     };
 
     [Theory]
-    [MemberData(nameof(NextShouldReturnValidTokenData))]
-    public void Next_should_return_valid_token(string input, Token[] expected)
+    [MemberData(nameof(NextShouldBeValidBtree))]
+    public void Next_should_be_valid_btree(int maxKeysCount, List<int> keys, string validBtreeJson)
     {
-        var sut = new Lexer(input);
+        var sut = new Btree(maxKeysCount);
 
-        var actual = new List<Token>();
-        var next = sut.NextToken();
-        while (next.Type != TokenType.EOF)
+        foreach (var key in keys)
         {
-            actual.Add(next);
-            next = sut.NextToken();
+            sut.Insert(key);
         }
 
-        actual.Should().BeEquivalentTo(expected);
+        var actual = JsonSerializer.Serialize(validBtreeJson);
+        actual.Should().BeEquivalentTo(validBtreeJson);
     }
 }

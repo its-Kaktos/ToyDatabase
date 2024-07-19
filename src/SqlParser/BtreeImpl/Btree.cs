@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
+using System.Text;
 
 namespace SqlParser.BtreeImpl;
 
@@ -28,7 +30,7 @@ public class Btree
 
     public void Insert(int key)
     {
-        var node = SearchNodeUsingKey(key, Root);
+        var node = FindNodeToInsertKeyInto(key, Root);
         node.AddKey(key);
 
         if (node.IsKeysFull)
@@ -40,9 +42,29 @@ public class Btree
 
     public void Delete(int key)
     {
-        
-    }
+        var node = SearchKey(key, Root);
+        if (node is null)
+        {
+            // TODO should i throw exception when key is not found?
+            return;
+        }
 
+        node.DeleteKey(key);
+        
+        // There is enough keys in node, simply return.
+        if (!node.IsKeysLessThanMinimum) return;
+        
+        
+        // If we get here it means there is not enough
+        // keys in current node.
+        
+
+        // Try to get a key from siblings
+        if (node.AddKeyToCurrentNodeFromSibling()) return;
+        
+        // TODO Siblings keys are at minimum, merge them?
+    }
+    
     // Tail recursive calls are never optimized in c#! : https://blog.objektkultur.de/about-tail-recursion-in-.net/
     // You can see it is not optimized in the IL Viewer.
     private void BalanceTree(BtreeNode node)
@@ -90,9 +112,15 @@ public class Btree
         return node;
     }
     
+    private BtreeNode FindNodeToInsertKeyInto(int key, BtreeNode node)
+    {
+        return SearchKeyToInsert(key, node) ?? throw new UnreachableException();
+    }
+    
     // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
     // TODO Use the search method if possible.
-    private BtreeNode SearchNodeUsingKey(int key, BtreeNode node)
+    // TODO Tail recursion is not optimized.
+    private BtreeNode? SearchKeyToInsert(int key, BtreeNode node)
     {
         // If node is a leaf, it means we have found the node to insert our value into.
         if (node.IsLeaf) return node;
@@ -102,11 +130,26 @@ public class Btree
             if (key > node.Keys[i]) continue;
 
             // Value is less that current key, search its child.
-            return SearchNodeUsingKey(key, node.Children[i]);
+            return SearchKeyToInsert(key, node.Children[i]);
         }
 
         // Value is greater than all keys, search right most child
-        return SearchNodeUsingKey(key, node.Children[node.Keys.Count]);
+        return SearchKeyToInsert(key, node.Children[node.Keys.Count]);
+    } 
+    
+    private BtreeNode? SearchKey(int key, BtreeNode node)
+    {
+        for (var i = 0; i < node.Keys.Count; i++)
+        {
+            if (key > node.Keys[i]) continue;
+            if (key == node.Keys[i]) return node;
+
+            // Value is less that current key, search its child.
+            return SearchKey(key, node.Children[i]);
+        }
+
+        // Value is greater than all keys, search right most child
+        return SearchKey(key, node.Children[node.Keys.Count]);
     }
 
     // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search

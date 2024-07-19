@@ -2,6 +2,7 @@
 // https://ruslanspivak.com/lsbasi-part1/
 // https://forcedotcom.github.io/phoenix/index.html#select_expression
 
+using System.Text.Json;
 using SqlParser;
 using SqlParser.BtreeImpl;
 
@@ -49,25 +50,40 @@ using SqlParser.BtreeImpl;
 // };
 
 // var btree = CreateDefaultBtree();
-var btree = new Btree(3);
+var maxKeysCount = Random.Shared.Next(3, 6);
+var btree = new Btree(maxKeysCount);
 
-foreach (var i in Enumerable.Range(1, 25))
+var keysAddedInOrder = new List<int>();
+var max = Random.Shared.Next(10, 50);
+for (int i = 0; i < max; i++)
 {
-    InsertAndPrint(btree, i);
+    var key = Random.Shared.Next(0, 100);
+    keysAddedInOrder.Add(key);
+    InsertAndPrint(btree, key);
 }
 
-// InsertAndPrint(btree, 1);
-// InsertAndPrint(btree, 2);
-// InsertAndPrint(btree, 3);
-// InsertAndPrint(btree, 4);
-// InsertAndPrint(btree, 5);
+Console.WriteLine(JsonSerializer.Serialize(btree));
+Console.WriteLine();
+Console.WriteLine("MAX KEYS " + maxKeysCount);
+Console.WriteLine();
+Console.WriteLine(JsonSerializer.Serialize(keysAddedInOrder));
 
 
+// TODO Add unit tests, and a method to check B-tree is valid,
+// TODO using the rules provided on wikipedia and other websites.
 return;
+
+void DeleteAndPrint(Btree bt, int key)
+{
+    Console.WriteLine("------------ Deleting key: " + key);
+    bt.Delete(key);
+    bt.PrettyPrint(Color.Black);
+    Console.WriteLine("****************************************");
+}
 
 void InsertAndPrint(Btree bt, int key)
 {
-    Console.WriteLine("Adding key: " + key);
+    Console.WriteLine("++++++++++++ Adding key: " + key);
     bt.Insert(key);
     bt.PrettyPrint(Color.Black);
     Console.WriteLine("****************************************");
