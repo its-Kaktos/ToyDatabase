@@ -48,43 +48,61 @@ using SqlParser.BtreeImpl;
 //     Root = root
 // };
 
-var btree = CreateDefaultBtree();
-btree.PrettyPrint(Color.Black);
+// var btree = CreateDefaultBtree();
+var btree = new Btree(3);
 
-Console.WriteLine(btree.Search(5));
-Console.WriteLine(btree.Search(1));
-Console.WriteLine(btree.Search(8));
-Console.WriteLine(btree.Search(9));
+foreach (var i in Enumerable.Range(1, 25))
+{
+    InsertAndPrint(btree, i);
+}
+
+// InsertAndPrint(btree, 1);
+// InsertAndPrint(btree, 2);
+// InsertAndPrint(btree, 3);
+// InsertAndPrint(btree, 4);
+// InsertAndPrint(btree, 5);
 
 
 return;
 
+void InsertAndPrint(Btree bt, int key)
+{
+    Console.WriteLine("Adding key: " + key);
+    bt.Insert(key);
+    bt.PrettyPrint(Color.Black);
+    Console.WriteLine("****************************************");
+}
+
 Btree CreateDefaultBtree()
 {
-    return new Btree(new BtreeNode
+    const int maxKeys = 4;
+    return new Btree(maxKeys)
     {
-        Keys = [4],
-        Child =
-        [
-            new BtreeNode
-            {
-                Keys = [2],
-                Child =
-                [
-                    new BtreeNode { Keys = [1] },
-                    new BtreeNode { Keys = [3, 4] },
-                ]
-            },
-            new BtreeNode
-            {
-                Keys = [5, 6],
-                Child =
-                [
-                    new BtreeNode { Keys = [5] },
-                    new BtreeNode { Keys = [5, 6] },
-                    new BtreeNode { Keys = [7, 8] },
-                ]
-            },
-        ]
-    });
+        Root = new BtreeNode(maxKeys)
+        {
+            Keys = [4],
+            Child =
+            [
+                new BtreeNode(maxKeys)
+                {
+                    Keys = [2],
+                    Child =
+                    [
+                        new BtreeNode(maxKeys) { Keys = [1] },
+                        new BtreeNode(maxKeys) { Keys = [3, 4] },
+                    ]
+                },
+                new BtreeNode(maxKeys)
+                {
+                    Keys = [5, 6],
+                    Child =
+                    [
+                        new BtreeNode(maxKeys) { Keys = [5] },
+                        new BtreeNode(maxKeys) { Keys = [5, 6] },
+                        new BtreeNode(maxKeys) { Keys = [7, 8] },
+                    ]
+                },
+            ]
+        }
+    };
 }
