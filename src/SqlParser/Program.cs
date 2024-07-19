@@ -49,41 +49,42 @@ using SqlParser.BtreeImpl;
 // };
 
 var btree = CreateDefaultBtree();
-
 btree.PrettyPrint(Color.Black);
+
+Console.WriteLine(btree.Search(5));
+Console.WriteLine(btree.Search(1));
+Console.WriteLine(btree.Search(8));
+Console.WriteLine(btree.Search(9));
 
 
 return;
 
 Btree CreateDefaultBtree()
 {
-    return new Btree
+    return new Btree(new BtreeNode
     {
-        Root = new BtreeNode()
-        {
-            Keys = [4],
-            Child =
-            [
-                new BtreeNode
-                {
-                    Keys = [2],
-                    Child =
-                    [
-                        new BtreeNode { Keys = [1] },
-                        new BtreeNode { Keys = [3, 4] },
-                    ]
-                },
-                new BtreeNode
-                {
-                    Keys = [5, 6],
-                    Child =
-                    [
-                        new BtreeNode { Keys = [5] },
-                        new BtreeNode { Keys = [5, 6] },
-                        new BtreeNode { Keys = [7, 8] },
-                    ]
-                },
-            ]
-        }
-    };
+        Keys = [4],
+        Child =
+        [
+            new BtreeNode
+            {
+                Keys = [2],
+                Child =
+                [
+                    new BtreeNode { Keys = [1] },
+                    new BtreeNode { Keys = [3, 4] },
+                ]
+            },
+            new BtreeNode
+            {
+                Keys = [5, 6],
+                Child =
+                [
+                    new BtreeNode { Keys = [5] },
+                    new BtreeNode { Keys = [5, 6] },
+                    new BtreeNode { Keys = [7, 8] },
+                ]
+            },
+        ]
+    });
 }

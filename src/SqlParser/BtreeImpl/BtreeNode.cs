@@ -10,4 +10,9 @@ public record BtreeNode
     
     public List<int> Keys { get; set; }
     public List<BtreeNode> Child { get; set; }
+
+    public bool IsLeaf
+    {
+        get => Child.Count == 0;
+    }
 }
