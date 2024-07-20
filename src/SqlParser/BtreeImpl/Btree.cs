@@ -1,9 +1,14 @@
 using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace SqlParser.BtreeImpl;
 
+// TODO Disallow duplicate key insertion, because:
+// TODO Firstly, databases do NOT allow duplicate indexes,
+// TODO secondly, by the search definition of a BST, if the value is <>,
+// TODO     you traverse the data structure in one of two 'directions'.
+// TODO     So, in that sense, duplicate values don't make any sense at all.
+// TODO thirdly having duplicate values adds more complexity
+// TODO     which I dont want to handle right now.
 public class Btree
 {
     private readonly int _maxKeysCount;

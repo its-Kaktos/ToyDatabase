@@ -50,23 +50,81 @@ using SqlParser.BtreeImpl;
 // };
 
 // var btree = CreateDefaultBtree();
-var maxKeysCount = Random.Shared.Next(3, 6);
+// var maxKeysCount = Random.Shared.Next(3, 6);
+// var btree = new Btree(maxKeysCount);
+//
+// var keysAddedInOrder = new List<int>();
+// var max = Random.Shared.Next(10, 50);
+// for (int i = 0; i < max; i++)
+// {
+//     var key = Random.Shared.Next(0, 100);
+//     keysAddedInOrder.Add(key);
+//     InsertAndPrint(btree, key);
+// }
+//
+// Console.WriteLine(JsonSerializer.Serialize(btree));
+// Console.WriteLine();
+// Console.WriteLine("MAX KEYS " + maxKeysCount);
+// Console.WriteLine();
+// Console.WriteLine(JsonSerializer.Serialize(keysAddedInOrder));
+
+var maxKeysCount = 3;
 var btree = new Btree(maxKeysCount);
 
-var keysAddedInOrder = new List<int>();
-var max = Random.Shared.Next(10, 50);
-for (int i = 0; i < max; i++)
-{
-    var key = Random.Shared.Next(0, 100);
-    keysAddedInOrder.Add(key);
-    InsertAndPrint(btree, key);
-}
+InsertAndPrint(btree, 1);
+InsertAndPrint(btree, 24);
+InsertAndPrint(btree, 62);
+InsertAndPrint(btree, 0);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 7);
+InsertAndPrint(btree, 28);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 66);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 38);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 1);
+InsertAndPrint(btree, 2);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 5);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 94);
+InsertAndPrint(btree, 1);
+InsertAndPrint(btree, 2);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 5);
+InsertAndPrint(btree, 1);
+InsertAndPrint(btree, 2);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 5);
+InsertAndPrint(btree, 5);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 4);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 3);
+InsertAndPrint(btree, 3);
 
-Console.WriteLine(JsonSerializer.Serialize(btree));
-Console.WriteLine();
-Console.WriteLine("MAX KEYS " + maxKeysCount);
-Console.WriteLine();
-Console.WriteLine(JsonSerializer.Serialize(keysAddedInOrder));
+var btreeValidator = new BtreeValidator();
+btreeValidator.ThrowWhenInvalidBTree(btree, maxKeysCount);
 
 
 // TODO Add unit tests, and a method to check B-tree is valid,
