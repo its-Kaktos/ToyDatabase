@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using System.Text;
 using System.Text.Json.Serialization;
 
 namespace SqlParser.BtreeImpl;
@@ -83,7 +81,7 @@ public record BtreeNode
         }
 
         var rightChildIndex = keyIndex + 1;
-        if (key >= Children.Count)
+        if (rightChildIndex >= Children.Count)
         {
             _children.Add(rightChild);
             return;
