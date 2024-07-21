@@ -2,130 +2,24 @@
 // https://ruslanspivak.com/lsbasi-part1/
 // https://forcedotcom.github.io/phoenix/index.html#select_expression
 
-using System.Text.Json;
 using SqlParser;
 using SqlParser.BtreeImpl;
+using SqlParser.Extensions;
 
-// var input = """
-//             SELECT * FROM tableNameHere
-//             """;
-// var lexer = new Lexer(input);
-// var parser = new Parser(lexer);
-// var ast = parser.Parse();
-// try
-// {
-//     ast.PrettyPrint();
-//     
-// }
-// catch (Exception e)
-// {
-//     Console.WriteLine(e);
-//     throw;
-// }
-
-// var leftLeaf = new BtreeNode()
-// {
-//     Keys = [1]
-// };
-//
-// var middleLeaf = new BtreeNode()
-// {
-//     Keys = [2]
-// };
-//
-// var rightLeaf = new BtreeNode()
-// {
-//     Keys = [3, 4]
-// };
-//
-// var root = new BtreeNode()
-// {
-//     Keys = [2, 2],
-//     Child = [leftLeaf, middleLeaf, rightLeaf]
-// };
-//
-// var btree = new Btree()
-// {
-//     Root = root
-// };
-
-// var btree = CreateDefaultBtree();
-// var maxKeysCount = Random.Shared.Next(3, 6);
-// var btree = new Btree(maxKeysCount);
-//
-// var keysAddedInOrder = new List<int>();
-// var max = Random.Shared.Next(10, 50);
-// for (int i = 0; i < max; i++)
-// {
-//     var key = Random.Shared.Next(0, 100);
-//     keysAddedInOrder.Add(key);
-//     InsertAndPrint(btree, key);
-// }
-//
-// Console.WriteLine(JsonSerializer.Serialize(btree));
-// Console.WriteLine();
-// Console.WriteLine("MAX KEYS " + maxKeysCount);
-// Console.WriteLine();
-// Console.WriteLine(JsonSerializer.Serialize(keysAddedInOrder));
-
-var maxKeysCount = 3;
+var maxKeysCount = 4098;
 var btree = new Btree(maxKeysCount);
 
-InsertAndPrint(btree, 1);
-InsertAndPrint(btree, 24);
-InsertAndPrint(btree, 62);
-InsertAndPrint(btree, 0);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 7);
-InsertAndPrint(btree, 28);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 66);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 38);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 1);
-InsertAndPrint(btree, 2);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 5);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 94);
-InsertAndPrint(btree, 1);
-InsertAndPrint(btree, 2);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 5);
-InsertAndPrint(btree, 1);
-InsertAndPrint(btree, 2);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 5);
-InsertAndPrint(btree, 5);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 4);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 3);
-InsertAndPrint(btree, 3);
+foreach (var i in Enumerable.Range(1, 1_000_000))
+{
+    btree.Insert(i);
+}
 
-var btreeValidator = new BtreeValidator();
-btreeValidator.ThrowWhenInvalidBTree(btree, maxKeysCount);
+// var btreeStr = btree.ToPrettyString();
+// File.WriteAllText("/home/kaktos/Desktop/" + Guid.NewGuid(), btreeStr);
 
+btree.ThrowWhenInvalidBTree(maxKeysCount);
+
+Console.WriteLine("Done.");
 
 // TODO Add unit tests, and a method to check B-tree is valid,
 // TODO using the rules provided on wikipedia and other websites.

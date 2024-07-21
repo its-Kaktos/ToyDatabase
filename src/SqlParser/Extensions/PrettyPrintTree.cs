@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using SqlParser.BtreeImpl;
 using SqlParser.Nodes;
 
-namespace SqlParser;
+namespace SqlParser.Extensions;
 
 public enum Color
 {
@@ -41,6 +41,18 @@ public static class PrettyPrintAst
         );
 
         pt.Display(tree.Root);
+    }
+    
+    public static string ToPrettyString(this Btree tree)
+    {
+        var pt = new PrettyPrintTree<BtreeNode>(
+            getChildren: node => node.Children,
+            getVal: node => ListToString(node.Keys),
+            Color.None,
+            border: true
+        );
+
+        return pt.ToStr(tree.Root);
     }
 
     private static string ListToString(IEnumerable<int> values)
@@ -99,7 +111,7 @@ internal partial class PrettyPrintTree<TNode>
         Console.WriteLine(ToStr(node, depth: depth));
     }
 
-    private string ToStr(TNode node, int depth = 0)
+    public string ToStr(TNode node, int depth = 0)
     {
         var res = TreeToStr(node, depth: depth);
         var str = new StringBuilder();

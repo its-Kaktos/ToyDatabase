@@ -9,6 +9,7 @@ namespace SqlParser.BtreeImpl;
 // TODO     So, in that sense, duplicate values don't make any sense at all.
 // TODO thirdly having duplicate values adds more complexity
 // TODO     which I dont want to handle right now.
+// TODO Use array instead of List to reduce memory usage.
 public class Btree
 {
     private readonly int _maxKeysCount;
