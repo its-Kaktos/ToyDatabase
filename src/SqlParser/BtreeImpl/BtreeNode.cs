@@ -160,6 +160,30 @@ public record BtreeNode
                                           TryMergeCurrentNodeWithParentKeyAndRightSibling());
     }
 
+    /// <summary>
+    /// Replaces the <paramref name="key"/> with the greatest key of the right most leaf.
+    /// </summary>
+    /// <param name="key">Key to find and replace with the greatest key of the right most leaf.</param>
+    /// <returns>Right most leaf that the new key was removed from.</returns>
+    /// <exception cref="InvalidOperationException">When <paramref name="key"/> is not found.</exception>
+    public BtreeNode ReplaceKeyWithRightMostKeyOfLeaf(int key)
+    {
+        for (var i = 0; i < _keys.Count; i++)
+        {
+            if (_keys[i] != key) continue;
+
+            var leftChild = _children[i];
+            var rightMostLeaf = leftChild.GetRightMostLeaf();
+            var greatestKeyOfRightMostLeaf = rightMostLeaf.RemoveLastKey();
+
+            _keys[i] = greatestKeyOfRightMostLeaf;
+
+            return rightMostLeaf;
+        }
+
+        throw new InvalidOperationException("Did not find the key.");
+    }
+    
     private int AddKeyInternal(int key)
     {
         for (var i = 0; i < _keys.Count; i++)
@@ -261,14 +285,6 @@ public record BtreeNode
         return key;
     }
 
-    private int RemoveFirstKey()
-    {
-        var key = _keys[0];
-        _keys.RemoveAt(0);
-
-        return key;
-    }
-
     private bool TryMergeCurrentNodeWithParentKeyAndLeftSibling()
     {
         var leftSiblingIndex = -1;
@@ -343,30 +359,6 @@ public record BtreeNode
         {
             node.ParentNode = parentNode;
         }
-    }
-
-    /// <summary>
-    /// Replaces the <paramref name="key"/> with the greatest key of the right most leaf.
-    /// </summary>
-    /// <param name="key">Key to find and replace with the greatest key of the right most leaf.</param>
-    /// <returns>Right most leaf that the new key was removed from.</returns>
-    /// <exception cref="InvalidOperationException">When <paramref name="key"/> is not found.</exception>
-    public BtreeNode ReplaceKeyWithRightMostKeyOfLeaf(int key)
-    {
-        for (var i = 0; i < _keys.Count; i++)
-        {
-            if (_keys[i] != key) continue;
-
-            var leftChild = _children[i];
-            var rightMostLeaf = leftChild.GetRightMostLeaf();
-            var greatestKeyOfRightMostLeaf = rightMostLeaf.RemoveLastKey();
-
-            _keys[i] = greatestKeyOfRightMostLeaf;
-
-            return rightMostLeaf;
-        }
-
-        throw new InvalidOperationException("Did not find the key.");
     }
     
     /// <summary>
