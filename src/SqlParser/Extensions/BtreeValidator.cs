@@ -18,6 +18,40 @@ namespace SqlParser.Extensions;
  */
 public static class BtreeValidator
 {
+    public static void StressTestRandomTreesInfinitly(this Btree tree)
+    {
+        long numbersOfPasses = 2;
+        var random = new Random();
+        while (true)
+        {
+            var maxKeysCount = random.Next(4, 150);
+            var btree = new Btree(maxKeysCount);
+            var listNumbers = Enumerable.Range(1, random.Next(50, 500)).ToList();
+
+            Console.WriteLine($"++++START new random check, max keys: {maxKeysCount}, numbers of items added: {listNumbers.Count}");
+            foreach (var i in listNumbers)
+            {
+                btree.Insert(i);
+                btree.ThrowWhenInvalidBTree(maxKeysCount);
+            }
+
+            var guid = Guid.NewGuid();
+            listNumbers = listNumbers.OrderBy(x => guid).ToList();
+            while (true)
+            {
+                var numberToRemove = listNumbers[0];
+                btree.Delete(numberToRemove);
+                btree.ThrowWhenInvalidBTree(maxKeysCount);
+                listNumbers.RemoveAt(0);
+                if (listNumbers.Count <= 0) break;
+            }
+
+            numbersOfPasses++;
+            Console.WriteLine($"Number of passes: {numbersOfPasses}");
+            Thread.Sleep(10);
+        }
+    }
+
     /// <summary>
     /// Validate B-tree based on these rules.
     /// <para>Note: this validation is not optimized and will traverse the tree multiple times.</para>

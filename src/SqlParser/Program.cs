@@ -2,17 +2,17 @@
 // https://ruslanspivak.com/lsbasi-part1/
 // https://forcedotcom.github.io/phoenix/index.html#select_expression
 
-using SqlParser;
 using SqlParser.BtreeImpl;
 using SqlParser.Extensions;
 
-var maxKeysCount = 4098;
-var btree = new Btree(maxKeysCount);
 
-foreach (var i in Enumerable.Range(1, 1_000_000))
+var maxKeysCount = 4;
+var btree = new Btree(maxKeysCount);
+foreach (var i in Enumerable.Range(1, 150).ToList())
 {
-    btree.Insert(i);
+    InsertAndPrint(btree, i);
 }
+
 
 // var btreeStr = btree.ToPrettyString();
 // File.WriteAllText("/home/kaktos/Desktop/" + Guid.NewGuid(), btreeStr);
@@ -21,13 +21,11 @@ btree.ThrowWhenInvalidBTree(maxKeysCount);
 
 Console.WriteLine("Done.");
 
-// TODO Add unit tests, and a method to check B-tree is valid,
-// TODO using the rules provided on wikipedia and other websites.
 return;
 
 void DeleteAndPrint(Btree bt, int key)
 {
-    Console.WriteLine("------------ Deleting key: " + key);
+    Console.WriteLine("------------ Deleted key: " + key);
     bt.Delete(key);
     bt.PrettyPrint(Color.Black);
     Console.WriteLine("****************************************");
@@ -35,7 +33,7 @@ void DeleteAndPrint(Btree bt, int key)
 
 void InsertAndPrint(Btree bt, int key)
 {
-    Console.WriteLine("++++++++++++ Adding key: " + key);
+    Console.WriteLine("++++++++++++ Added key: " + key);
     bt.Insert(key);
     bt.PrettyPrint(Color.Black);
     Console.WriteLine("****************************************");

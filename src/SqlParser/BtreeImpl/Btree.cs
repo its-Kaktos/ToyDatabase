@@ -2,14 +2,20 @@ using System.Diagnostics;
 
 namespace SqlParser.BtreeImpl;
 
-// TODO Disallow duplicate key insertion, because:
-// TODO Firstly, databases do NOT allow duplicate indexes,
-// TODO secondly, by the search definition of a BST, if the value is <>,
-// TODO     you traverse the data structure in one of two 'directions'.
-// TODO     So, in that sense, duplicate values don't make any sense at all.
-// TODO thirdly having duplicate values adds more complexity
-// TODO     which I dont want to handle right now.
+// Disallow duplicate key insertion, because:
+//  Firstly, databases do NOT allow duplicate indexes,
+//  secondly, by the search definition of a BST, if the value is <>,
+//      you traverse the data structure in one of two 'directions'.
+//      So, in that sense, duplicate values don't make any sense at all.
+//  thirdly having duplicate values adds more complexity
+//      which I don't want to handle right now.
 // TODO Use array instead of List to reduce memory usage.
+/**
+ * Sources:
+ * https://en.wikipedia.org/wiki/B-tree
+ * https://www.youtube.com/watch?v=K1a2Bk8NrYQ&ab_channel=SpanningTree
+ * https://www.cs.cornell.edu/courses/cs211/2000fa/AccelStream/B-Trees.pdf
+ */
 public class Btree
 {
     private readonly int _maxKeysCount;
@@ -49,28 +55,68 @@ public class Btree
     public void Delete(int key)
     {
         var node = SearchKey(key, Root);
-        if (node is null)
+        if (node is null) throw new InvalidOperationException("Key is not found.");
+
+        if (!node.IsLeaf)
         {
-            // TODO should i throw exception when key is not found?
+            // Remove left child's biggest key (right most leaf of the left child) and return that key,
+            // lets name the returned key 'new key'. Replace the key with the 'new key', and re-balance the tree from
+            // the leaf node that the 'new key' was removed from.
+            var leafNode = node.ReplaceKeyWithRightMostKeyOfLeaf(key);
+
+            // To re-balance the tree if needed.
+            node = leafNode;
+        }
+        else
+        {
+            node.DeleteKey(key);
+        }
+
+        BalanceTreeAfterDeletion(node);
+    }
+
+    // Tail recursive calls are never optimized in c#! : https://blog.objektkultur.de/about-tail-recursion-in-.net/
+    // You can see it is not optimized in the IL Viewer.
+    private void BalanceTreeAfterDeletion(BtreeNode node)
+    {
+        if (ReferenceEquals(Root, node)) return;
+
+        // There is enough keys in node, simply return.
+        if (!node.IsKeysLessThanMinimum) return;
+
+        // If we get here it means there is not enough
+        // keys in current node.
+
+        // Try to get a key from siblings
+        if (node.TryAddKeyToCurrentNodeFromSibling()) return;
+
+        // Siblings only have the minimum amount of keys,
+        // merge current node and its parent key with
+        // left or right sibling
+        if (!node.TryMergeCurrentNodeWithParentKeyAndSibling())
+        {
+            throw new InvalidOperationException("Can not remove current key, merging was not successful.");
+        }
+
+        var isNextNodeRoot = node.ParentNode?.ParentNode is null;
+        if (isNextNodeRoot)
+        {
+            var rootNode = node.ParentNode!;
+            if (rootNode.Keys.Count == 0)
+            {
+                // Current root node is empty,
+                // Make current node the new root node.
+
+                Root = node;
+                node.ParentNode = null;
+            }
+
             return;
         }
 
-        node.DeleteKey(key);
-        
-        // There is enough keys in node, simply return.
-        if (!node.IsKeysLessThanMinimum) return;
-        
-        
-        // If we get here it means there is not enough
-        // keys in current node.
-        
-
-        // Try to get a key from siblings
-        if (node.AddKeyToCurrentNodeFromSibling()) return;
-        
-        // TODO Siblings keys are at minimum, merge them?
+        if (node.ParentNode is not null) BalanceTreeAfterDeletion(node.ParentNode);
     }
-    
+
     // Tail recursive calls are never optimized in c#! : https://blog.objektkultur.de/about-tail-recursion-in-.net/
     // You can see it is not optimized in the IL Viewer.
     private void BalanceTree(BtreeNode node)
@@ -104,7 +150,7 @@ public class Btree
 
         if (parentNode.IsKeysFull)
         {
-           BalanceTree(parentNode);
+            BalanceTree(parentNode);
         }
     }
 
@@ -117,15 +163,13 @@ public class Btree
 
         return node;
     }
-    
+
     private BtreeNode FindNodeToInsertKeyInto(int key, BtreeNode node)
     {
         return SearchKeyToInsert(key, node) ?? throw new UnreachableException();
     }
-    
+
     // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
-    // TODO Use the search method if possible.
-    // TODO Tail recursion is not optimized.
     private BtreeNode? SearchKeyToInsert(int key, BtreeNode node)
     {
         // If node is a leaf, it means we have found the node to insert our value into.
@@ -134,6 +178,7 @@ public class Btree
         for (var i = 0; i < node.Keys.Count; i++)
         {
             if (key > node.Keys[i]) continue;
+            if (key == node.Keys[i]) throw new InvalidOperationException("Duplicate key is not allowed.");
 
             // Value is less that current key, search its child.
             return SearchKeyToInsert(key, node.Children[i]);
@@ -141,8 +186,8 @@ public class Btree
 
         // Value is greater than all keys, search right most child
         return SearchKeyToInsert(key, node.Children[node.Keys.Count]);
-    } 
-    
+    }
+
     private BtreeNode? SearchKey(int key, BtreeNode node)
     {
         for (var i = 0; i < node.Keys.Count; i++)
@@ -151,11 +196,11 @@ public class Btree
             if (key == node.Keys[i]) return node;
 
             // Value is less that current key, search its child.
-            return SearchKey(key, node.Children[i]);
+            return node.IsLeaf ? null : SearchKey(key, node.Children[i]);
         }
 
         // Value is greater than all keys, search right most child
-        return SearchKey(key, node.Children[node.Keys.Count]);
+        return node.IsLeaf ? null : SearchKey(key, node.Children[node.Keys.Count]);
     }
 
     // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
