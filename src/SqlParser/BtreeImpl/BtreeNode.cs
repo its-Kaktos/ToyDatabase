@@ -45,12 +45,6 @@ public record BtreeNode
     }
 
     [JsonIgnore]
-    public bool IsKeysAtMinimum
-    {
-        get => _keys.Count == _minKeysCount;
-    }
-
-    [JsonIgnore]
     public bool IsKeysLessThanMinimum
     {
         get => _keys.Count < _minKeysCount;
@@ -61,8 +55,7 @@ public record BtreeNode
     {
         get => _keys.Count > _minKeysCount;
     }
-
-    // TODO is there any better method to search? e.g binary search.
+    
     public void AddKey(int key)
     {
         AddKeyInternal(key);
@@ -186,17 +179,25 @@ public record BtreeNode
     
     private int AddKeyInternal(int key)
     {
-        for (var i = 0; i < _keys.Count; i++)
+        var start = 0;
+        var end = _keys.Count - 1;
+        while (start <= end)
         {
-            if (key > _keys[i]) continue;
-            if (key == _keys[i]) throw new InvalidOperationException("Duplicate key is not allowed.");
+            var middle = (start + end) / 2;
 
-            _keys.Insert(i, key);
-            return i;
+            if (_keys[middle] == key) throw new InvalidOperationException("Duplicate key is not allowed.");
+
+            if (_keys[middle] > key)
+            {
+                end = middle - 1; // Search in the left half
+                continue;
+            }
+
+            start = middle + 1; // Search in the right half
         }
 
-        _keys.Add(key);
-        return _keys.Count - 1;
+        _keys.Insert(start, key);
+        return start;
     }
 
     /// <summary>
@@ -285,6 +286,23 @@ public record BtreeNode
         return key;
     }
 
+    /// <summary>
+    /// Attempts to merge the current node with its left sibling, using the parent key as a bridge.
+    /// 
+    /// This method performs the following steps:
+    /// 1. Identifies the index of the current node within its parent's list of children and determines the index of its left sibling.
+    /// 2. If there is no left sibling, the method returns false to indicate that the merge operation cannot be performed.
+    /// 3. Retrieves the parent key that separates the current node and its left sibling.
+    /// 4. Merges the left sibling's keys and the parent key with the current node's keys and children, placing the merged keys and children at the start of the current node.
+    /// 5. Updates the parent references of the current node's new children to point to the current node.
+    /// 6. Removes the left sibling from the parent node's list of children as it has been merged.
+    /// 
+    /// This method is typically used during tree balancing operations where nodes need to be merged to maintain B-tree properties.
+    /// 
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> if the merge operation was successful; <c>false</c> if the current node has no left sibling to merge with.
+    /// </returns>
     private bool TryMergeCurrentNodeWithParentKeyAndLeftSibling()
     {
         var leftSiblingIndex = -1;
@@ -320,6 +338,23 @@ public record BtreeNode
         return true;
     }
     
+    /// <summary>
+    /// Attempts to merge the current node with its right sibling, using the parent key as a bridge.
+    /// 
+    /// This method performs the following steps:
+    /// 1. Identifies the index of the current node within its parent's list of children and determines the index of its right sibling.
+    /// 2. If there is no right sibling, the method returns false to indicate that the merge operation cannot be performed.
+    /// 3. Retrieves the parent key that separates the current node and its right sibling.
+    /// 4. Merges the current node's keys with the right sibling's keys and the parent key.
+    /// 5. Updates the current node's children with those of the right sibling and adjusts the parent references of these children.
+    /// 6. Removes the right sibling from the parent node's list of children as it has been merged.
+    /// 
+    /// This method is typically used during tree balancing operations where nodes need to be merged to maintain B-tree properties.
+    /// 
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> if the merge operation was successful; <c>false</c> if the current node has no right sibling to merge with.
+    /// </returns>
     private bool TryMergeCurrentNodeWithParentKeyAndRightSibling()
     {
         var rightSiblingIndex = -1;
@@ -362,9 +397,11 @@ public record BtreeNode
     }
     
     /// <summary>
-    /// Returns the last (right most) leaf.
+    /// Traverses down the B-tree to find and return the rightmost leaf node.
+    /// This method starts at the current node and continuously moves to the rightmost child until it reaches a leaf node.
+    /// It assumes that the B-tree is well-formed and that every internal node has at least one child.
     /// </summary>
-    /// <returns>The last (right most) leaf.</returns>
+    /// <returns>The rightmost leaf node in the B-tree.</returns>
     private BtreeNode GetRightMostLeaf()
     {
         var node = this;
