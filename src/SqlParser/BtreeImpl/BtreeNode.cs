@@ -308,14 +308,14 @@ public record BtreeNode
         var leftSibling = ParentNode!._children[leftSiblingIndex];
         
         // Merge left sibling keys and parent key and current node keys and children.
-        leftSibling._keys.Add(parentKey);
-        leftSibling._keys.AddRange(_keys);
-        leftSibling._children.AddRange(_children);
-        UpdateParentOfChildrenTo(_children, leftSibling);
+        _keys.Insert(0, parentKey);
+        _keys.InsertRange(0, leftSibling._keys);
+        _children.InsertRange(0, leftSibling._children);
+        UpdateParentOfChildrenTo(leftSibling._children, this);
 
-        // Remove current node form parent children
-        // because current keys are moved to the left sibling
-        ParentNode._children.RemoveAt(leftSiblingIndex + 1);
+        // Remove left sibling node form parent children
+        // because left sibling keys are moved to this node
+        ParentNode._children.RemoveAt(leftSiblingIndex);
 
         return true;
     }
