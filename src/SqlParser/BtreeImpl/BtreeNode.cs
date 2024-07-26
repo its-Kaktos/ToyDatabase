@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Range = System.Range;
 
@@ -55,7 +56,7 @@ public record BtreeNode
     {
         get => _keys.Count > _minKeysCount;
     }
-    
+
     public void AddKey(int key)
     {
         AddKeyInternal(key);
@@ -86,13 +87,28 @@ public record BtreeNode
 
     public void RemoveChildByReference(BtreeNode node)
     {
-        for (var i = 0; i < _children.Count; i++)
+        var searchForKey = node.Keys[0];
+        var start = 0;
+        var end = _keys.Count - 1;
+        while (start <= end)
         {
-            if (!ReferenceEquals(_children[i], node)) continue;
+            var middle = (start + end) / 2;
 
-            _children.RemoveAt(i);
-            break;
+            if (_keys[middle] == searchForKey) throw new UnreachableException();
+
+            if (_keys[middle] > searchForKey)
+            {
+                end = middle - 1; // Search in the left half
+                continue;
+            }
+
+            start = middle + 1; // Search in the right half
         }
+
+        var childIndex = start;
+        if (!ReferenceEquals(_children[childIndex], node)) throw new InvalidOperationException("Did not find the correct children.");
+        
+        _children.RemoveAt(childIndex);
     }
 
     public void SetKeys(List<int> keys)
@@ -124,13 +140,28 @@ public record BtreeNode
     {
         if (!IsLeaf) throw new InvalidOperationException("Can not simply remove key when node is NOT a leaf.");
 
-        for (var i = 0; i < _keys.Count; i++)
+        var start = 0;
+        var end = _keys.Count - 1;
+        while (start <= end)
         {
-            if (_keys[i] != key) continue;
+            var middle = (start + end) / 2;
 
-            _keys.RemoveAt(i);
-            return;
+            if (_keys[middle] == key)
+            {
+                _keys.RemoveAt(middle);
+                return;
+            }
+
+            if (_keys[middle] > key)
+            {
+                end = middle - 1; // Search in the left half
+                continue;
+            }
+
+            start = middle + 1; // Search in the right half
         }
+
+        throw new InvalidOperationException("Key not found");
     }
 
     /// <summary>
@@ -161,6 +192,7 @@ public record BtreeNode
     /// <exception cref="InvalidOperationException">When <paramref name="key"/> is not found.</exception>
     public BtreeNode ReplaceKeyWithRightMostKeyOfLeaf(int key)
     {
+        // TODO use binary serach
         for (var i = 0; i < _keys.Count; i++)
         {
             if (_keys[i] != key) continue;
@@ -176,7 +208,7 @@ public record BtreeNode
 
         throw new InvalidOperationException("Did not find the key.");
     }
-    
+
     private int AddKeyInternal(int key)
     {
         var start = 0;
@@ -208,74 +240,115 @@ public record BtreeNode
     /// else returns <c>false</c>.</returns>
     private bool TryAddKeyToNodeFromLeftSibling(BtreeNode node)
     {
-        for (var i = 0; i < _children.Count; i++)
+        var searchForKey = node.Keys[0];
+        var start = 0;
+        var end = _keys.Count - 1;
+        while (start <= end)
         {
-            if (!ReferenceEquals(_children[i], node)) continue;
+            var middle = (start + end) / 2;
 
-            var leftSiblingIndex = i - 1;
-            if (leftSiblingIndex < 0) return false;
-            if (!_children[leftSiblingIndex].IsKeysGreaterThanMinimum) return false;
+            if (_keys[middle] == searchForKey) throw new UnreachableException();
 
-            var leftSiblingParentKey = _keys[leftSiblingIndex];
-            var newKey = _children[leftSiblingIndex].RemoveLastKey();
-            var lastChildOfLeftSibling = _children[leftSiblingIndex]._children.Count > 0 ? _children[leftSiblingIndex]._children[^1] : null;
-
-            _keys[leftSiblingIndex] = newKey;
-            _children[i]._keys.Insert(0, leftSiblingParentKey);
-
-            if (lastChildOfLeftSibling is not null)
+            if (_keys[middle] > searchForKey)
             {
-                // Remove this child from left sibling
-                // and add it to this node's children.
-                _children[i]._children.Insert(0, lastChildOfLeftSibling);
-                lastChildOfLeftSibling.ParentNode = _children[i];
-                _children[leftSiblingIndex]._children.RemoveAt(_children[leftSiblingIndex]._children.Count - 1);
+                end = middle - 1; // Search in the left half
+                continue;
             }
-            
-            return true;
+
+            start = middle + 1; // Search in the right half
         }
 
-        return false;
+        var nodeIndex = start;
+
+        if (!ReferenceEquals(_children[nodeIndex], node)) throw new InvalidOperationException("Did not find the correct children.");
+
+        var leftSiblingIndex = nodeIndex - 1;
+        if (leftSiblingIndex < 0) return false;
+        if (!_children[leftSiblingIndex].IsKeysGreaterThanMinimum) return false;
+
+        var leftSiblingParentKey = _keys[leftSiblingIndex];
+        var newKey = _children[leftSiblingIndex].RemoveLastKey();
+        var lastChildOfLeftSibling = _children[leftSiblingIndex]._children.Count > 0 ? _children[leftSiblingIndex]._children[^1] : null;
+
+        _keys[leftSiblingIndex] = newKey;
+        _children[nodeIndex]._keys.Insert(0, leftSiblingParentKey);
+
+        if (lastChildOfLeftSibling is not null)
+        {
+            // Remove this child from left sibling
+            // and add it to this node's children.
+            _children[nodeIndex]._children.Insert(0, lastChildOfLeftSibling);
+            lastChildOfLeftSibling.ParentNode = _children[nodeIndex];
+            _children[leftSiblingIndex]._children.RemoveAt(_children[leftSiblingIndex]._children.Count - 1);
+        }
+
+        return true;
     }
 
     /// <summary>
-    /// Appends a key from right sibling of <paramref name="node"/> into <paramref name="node"/>.
+    /// Attempts to borrow a key from the right sibling of the given node and redistribute it to the current node.
+    /// 
+    /// This method performs the following steps:
+    /// 1. Finds the index of the specified <paramref name="node"/> within the current node's list of children.
+    /// 2. Checks if there is a right sibling of the current node and whether the right sibling has enough keys to lend.
+    /// 3. If the right sibling has enough keys:
+    ///    - Retrieves the first key from the right sibling and the corresponding parent key that separates the current node and its right sibling.
+    ///    - Updates the current node by adding the parent key to its keys and moving the borrowed key from the right sibling to the current node.
+    ///    - Transfers the first child of the right sibling (if any) to the current node’s children and updates its parent reference.
+    ///    - Removes the borrowed key and transferred child from the right sibling.
+    /// 4. Returns <c>true</c> if the operation was successful; otherwise, <c>false</c> if the right sibling is not available or does not have sufficient keys.
+    /// 
+    /// This method is used during B-tree rebalancing operations to ensure that nodes have sufficient keys and that the tree remains balanced.
     /// </summary>
-    /// <param name="node">Node to prepend a key from right sibling into.</param>
-    /// <returns><c>true</c> if a right sibling that have greater than minimum number of allowed keys exists,
-    /// else returns <c>false</c>.</returns>
+    /// <param name="node">The child node from which the key will be borrowed.</param>
+    /// <returns><c>true</c> if the key was successfully borrowed and redistributed; <c>false</c> otherwise.</returns>
     private bool TryAddKeyToNodeFromRightSibling(BtreeNode node)
     {
-        for (var i = 0; i < _children.Count; i++)
+        var searchForKey = node.Keys[^1];
+        var start = 0;
+        var end = _keys.Count - 1;
+        while (start <= end)
         {
-            if (!ReferenceEquals(_children[i], node)) continue;
+            var middle = (start + end) / 2;
 
-            var rightSiblingIndex = i + 1;
-            if (rightSiblingIndex >= _children.Count) return false;
-            if (!_children[rightSiblingIndex].IsKeysGreaterThanMinimum) return false;
+            if (_keys[middle] == searchForKey) throw new UnreachableException();
 
-            var rightSiblingParentKey = _keys[rightSiblingIndex - 1];
-            var newKey = _children[rightSiblingIndex]._keys[0];
-            _children[rightSiblingIndex]._keys.RemoveAt(0);
-
-            var firstChildOfRightSibling = _children[rightSiblingIndex]._children.Count > 0 ? _children[rightSiblingIndex]._children[0] : null;
-            
-            _keys[rightSiblingIndex - 1] = newKey;
-            _children[i]._keys.Add(rightSiblingParentKey);
-
-            if (firstChildOfRightSibling is not null)
+            if (_keys[middle] > searchForKey)
             {
-                // Remove this child from right sibling
-                // and add it to this node's children.
-                _children[i]._children.Add(firstChildOfRightSibling);
-                firstChildOfRightSibling.ParentNode = _children[i];
-                _children[rightSiblingIndex]._children.RemoveAt(0);
+                end = middle - 1; // Search in the left half
+                continue;
             }
 
-            return true;
+            start = middle + 1; // Search in the right half
         }
 
-        return false;
+        var nodeIndex = start;
+
+        if (!ReferenceEquals(_children[nodeIndex], node)) throw new InvalidOperationException("Did not find the correct children.");
+
+        var rightSiblingIndex = nodeIndex + 1;
+        if (rightSiblingIndex >= _children.Count) return false;
+        if (!_children[rightSiblingIndex].IsKeysGreaterThanMinimum) return false;
+
+        var rightSiblingParentKey = _keys[rightSiblingIndex - 1];
+        var newKey = _children[rightSiblingIndex]._keys[0];
+        _children[rightSiblingIndex]._keys.RemoveAt(0);
+
+        var firstChildOfRightSibling = _children[rightSiblingIndex]._children.Count > 0 ? _children[rightSiblingIndex]._children[0] : null;
+
+        _keys[rightSiblingIndex - 1] = newKey;
+        _children[nodeIndex]._keys.Add(rightSiblingParentKey);
+
+        if (firstChildOfRightSibling is not null)
+        {
+            // Remove this child from right sibling
+            // and add it to this node's children.
+            _children[nodeIndex]._children.Add(firstChildOfRightSibling);
+            firstChildOfRightSibling.ParentNode = _children[nodeIndex];
+            _children[rightSiblingIndex]._children.RemoveAt(0);
+        }
+
+        return true;
     }
 
     private int RemoveLastKey()
@@ -305,14 +378,29 @@ public record BtreeNode
     /// </returns>
     private bool TryMergeCurrentNodeWithParentKeyAndLeftSibling()
     {
-        var leftSiblingIndex = -1;
-        for (var i = 0; i < ParentNode!._children.Count; i++)
+        var searchForKey = Keys[0];
+        var start = 0;
+        var end = ParentNode!._keys.Count - 1;
+        while (start <= end)
         {
-            if (!ReferenceEquals(this, ParentNode!._children[i])) continue;
+            var middle = (start + end) / 2;
 
-            leftSiblingIndex = i - 1;
-            break;
+            if (ParentNode._keys[middle] == searchForKey) throw new UnreachableException();
+
+            if (ParentNode._keys[middle] > searchForKey)
+            {
+                end = middle - 1; // Search in the left half
+                continue;
+            }
+
+            start = middle + 1; // Search in the right half
         }
+
+        var nodeIndex = start;
+
+        if (!ReferenceEquals(ParentNode._children[nodeIndex], this)) throw new InvalidOperationException("Did not find the correct children.");
+        
+        var leftSiblingIndex = nodeIndex - 1;
 
         // There is no left sibling
         if (leftSiblingIndex < 0) return false;
@@ -321,10 +409,10 @@ public record BtreeNode
         // it means this is the last child, so get the last parent key.
         var parentKeyIndex = leftSiblingIndex;
         var parentKey = ParentNode._keys[parentKeyIndex];
-        
+
         ParentNode._keys.RemoveAt(parentKeyIndex);
         var leftSibling = ParentNode!._children[leftSiblingIndex];
-        
+
         // Merge left sibling keys and parent key and current node keys and children.
         _keys.Insert(0, parentKey);
         _keys.InsertRange(0, leftSibling._keys);
@@ -337,7 +425,7 @@ public record BtreeNode
 
         return true;
     }
-    
+
     /// <summary>
     /// Attempts to merge the current node with its right sibling, using the parent key as a bridge.
     /// 
@@ -357,24 +445,39 @@ public record BtreeNode
     /// </returns>
     private bool TryMergeCurrentNodeWithParentKeyAndRightSibling()
     {
-        var rightSiblingIndex = -1;
-        for (var i = 0; i < ParentNode!._children.Count; i++)
+        var searchForKey = Keys[0];
+        var start = 0;
+        var end = ParentNode!._keys.Count - 1;
+        while (start <= end)
         {
-            if (!ReferenceEquals(this, ParentNode!._children[i])) continue;
+            var middle = (start + end) / 2;
 
-            rightSiblingIndex = i + 1;
-            break;
+            if (ParentNode._keys[middle] == searchForKey) throw new UnreachableException();
+
+            if (ParentNode._keys[middle] > searchForKey)
+            {
+                end = middle - 1; // Search in the left half
+                continue;
+            }
+
+            start = middle + 1; // Search in the right half
         }
+
+        var nodeIndex = start;
+
+        if (!ReferenceEquals(ParentNode._children[nodeIndex], this)) throw new InvalidOperationException("Did not find the correct children.");
+        
+        var rightSiblingIndex = nodeIndex + 1;
 
         // There is no right sibling
         if (rightSiblingIndex >= ParentNode._children.Count) return false;
-        
+
         var parentKeyIndex = rightSiblingIndex - 1;
         var parentKey = ParentNode._keys[parentKeyIndex];
-        
+
         ParentNode._keys.RemoveAt(parentKeyIndex);
         var rightSibling = ParentNode!._children[rightSiblingIndex];
-        
+
         // Merge current keys and parent key with right sibling keys.
         _keys.Add(parentKey);
         _keys.AddRange(rightSibling._keys);
@@ -395,7 +498,7 @@ public record BtreeNode
             node.ParentNode = parentNode;
         }
     }
-    
+
     /// <summary>
     /// Traverses down the B-tree to find and return the rightmost leaf node.
     /// This method starts at the current node and continuously moves to the rightmost child until it reaches a leaf node.
