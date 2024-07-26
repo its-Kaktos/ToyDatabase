@@ -18,7 +18,7 @@ namespace SqlParser.Extensions;
  */
 public static class BtreeValidator
 {
-    public static void StressTestRandomTreesInfinitly(this Btree tree)
+    public static void StressTestRandomTreesInfinitely(this Btree tree)
     {
         long numbersOfPasses = 2;
         var random = new Random();
@@ -35,8 +35,17 @@ public static class BtreeValidator
                 btree.ThrowWhenInvalidBTree(maxKeysCount);
             }
 
-            var guid = Guid.NewGuid();
-            listNumbers = listNumbers.OrderBy(x => guid).ToList();
+            listNumbers = listNumbers.OrderBy(_ => Guid.NewGuid()).ToList();
+            foreach (var i in listNumbers)
+            {
+                var result = btree.Search(i);
+                if (result is not null) continue;
+
+                Console.WriteLine($"*****Did not found key {i}");
+                throw new InvalidOperationException("Key not found.");
+            }
+
+            var orgList = listNumbers;
             while (true)
             {
                 var numberToRemove = listNumbers[0];

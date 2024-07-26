@@ -8,11 +8,16 @@ using SqlParser.Extensions;
 
 var maxKeysCount = 4;
 var btree = new Btree(maxKeysCount);
-foreach (var i in Enumerable.Range(1, 150).ToList())
+var numbers = Enumerable.Range(1, 5).ToList();
+foreach (var i in numbers)
 {
     InsertAndPrint(btree, i);
+    btree.ThrowWhenInvalidBTree(maxKeysCount);
 }
 
+DeleteAndPrint(btree, 2);
+
+btree.StressTestRandomTreesInfinitely();
 
 // var btreeStr = btree.ToPrettyString();
 // File.WriteAllText("/home/kaktos/Desktop/" + Guid.NewGuid(), btreeStr);
