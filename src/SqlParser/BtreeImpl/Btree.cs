@@ -40,7 +40,7 @@ public class Btree
         return Search(key, Root);
     }
 
-    public void Insert(int key)
+    public void Add(int key)
     {
         var node = GetNodeToInsertKey(key, Root);
         node.AddKey(key);
@@ -145,7 +145,7 @@ public class Btree
         }
 
         // Remove current node from children to add it again as left child.
-        parentNode.RemoveChildByReference(node);
+        if (parentNode.Children.Count != 0) parentNode.RemoveChildByReference(node);
         parentNode.AddKeyAndChildren(median, node, rightNode);
 
         if (parentNode.IsKeysFull)
@@ -205,7 +205,7 @@ public class Btree
 
         // Key is not found and there is no other child left to search for.
         if (node.IsLeaf) return null;
-        
+
         if (childIndex is null) throw new InvalidOperationException("Node is not a leaf, child index must not be null");
 
         // Search for key in the child.

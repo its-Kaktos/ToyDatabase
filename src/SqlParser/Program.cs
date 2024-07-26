@@ -8,7 +8,7 @@ using SqlParser.Extensions;
 
 var maxKeysCount = 4;
 var btree = new Btree(maxKeysCount);
-var numbers = Enumerable.Range(1, 5).ToList();
+var numbers = Enumerable.Range(1, 50).ToList();
 foreach (var i in numbers)
 {
     InsertAndPrint(btree, i);
@@ -39,7 +39,7 @@ void DeleteAndPrint(Btree bt, int key)
 void InsertAndPrint(Btree bt, int key)
 {
     Console.WriteLine("++++++++++++ Added key: " + key);
-    bt.Insert(key);
+    bt.Add(key);
     bt.PrettyPrint(Color.Black);
     Console.WriteLine("****************************************");
 }

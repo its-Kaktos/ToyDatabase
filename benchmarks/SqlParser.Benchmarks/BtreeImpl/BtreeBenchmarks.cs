@@ -25,7 +25,7 @@ public class BtreeBenchmarks
         var tr = new Btree(MaxChildCount);
         foreach (var item in _itemsToAdd)
         {
-            tr.Insert(item);
+            tr.Add(item);
         }
 
         return tr;

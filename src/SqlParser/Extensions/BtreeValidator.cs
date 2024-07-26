@@ -31,7 +31,7 @@ public static class BtreeValidator
             Console.WriteLine($"++++START new random check, max keys: {maxKeysCount}, numbers of items added: {listNumbers.Count}");
             foreach (var i in listNumbers)
             {
-                btree.Insert(i);
+                btree.Add(i);
                 btree.ThrowWhenInvalidBTree(maxKeysCount);
             }
 

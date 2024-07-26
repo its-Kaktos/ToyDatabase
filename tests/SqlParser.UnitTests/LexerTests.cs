@@ -27,7 +27,7 @@ public class LexerTests
 
         foreach (var key in keys)
         {
-            sut.Insert(key);
+            sut.Add(key);
         }
 
         var actual = JsonSerializer.Serialize(validBtreeJson);
