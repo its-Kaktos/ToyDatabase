@@ -42,19 +42,19 @@ public class Btree
 
     public void Insert(int key)
     {
-        var node = FindNodeToInsertKeyInto(key, Root);
+        var node = GetNodeToInsertKey(key, Root);
         node.AddKey(key);
 
         if (node.IsKeysFull)
         {
             BalanceTree(node);
-            Root = GetParentNode(Root);
+            Root = GetRootNode(Root);
         }
     }
 
     public void Delete(int key)
     {
-        var node = SearchKey(key, Root);
+        var node = GetNodeToDeleteKey(key, Root);
         if (node is null) throw new InvalidOperationException("Key is not found.");
 
         if (!node.IsLeaf)
@@ -154,7 +154,7 @@ public class Btree
         }
     }
 
-    private BtreeNode GetParentNode(BtreeNode node)
+    private BtreeNode GetRootNode(BtreeNode node)
     {
         while (node.ParentNode is not null)
         {
@@ -164,66 +164,103 @@ public class Btree
         return node;
     }
 
-    private BtreeNode FindNodeToInsertKeyInto(int key, BtreeNode node)
+    private BtreeNode GetNodeToInsertKey(int key, BtreeNode node)
     {
-        return SearchKeyToInsert(key, node) ?? throw new UnreachableException();
-    }
-
-    // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
-    private BtreeNode? SearchKeyToInsert(int key, BtreeNode node)
-    {
-        // If node is a leaf, it means we have found the node to insert our value into.
-        if (node.IsLeaf) return node;
-
-        for (var i = 0; i < node.Keys.Count; i++)
+        while (true)
         {
-            if (key > node.Keys[i]) continue;
-            if (key == node.Keys[i]) throw new InvalidOperationException("Duplicate key is not allowed.");
+            var (keyIndex, childIndex) = BinarySearchKey(node, key);
+            if (keyIndex is not null && node.Keys[keyIndex.Value] == key) throw new InvalidOperationException("Duplicate key is not allowed.");
 
-            // Value is less that current key, search its child.
-            return SearchKeyToInsert(key, node.Children[i]);
+            // If node is a leaf, it means we have found the node to insert our value into.
+            if (node.IsLeaf) return node;
+
+            if (childIndex is null) throw new InvalidOperationException("Node is not a leaf, child index must not be null");
+
+            // Search for key in the child.
+            node = node.Children[childIndex.Value];
         }
-
-        // Value is greater than all keys, search right most child
-        return SearchKeyToInsert(key, node.Children[node.Keys.Count]);
     }
 
-    private BtreeNode? SearchKey(int key, BtreeNode node)
+    private BtreeNode? GetNodeToDeleteKey(int key, BtreeNode node)
     {
-        for (var i = 0; i < node.Keys.Count; i++)
+        while (true)
         {
-            if (key > node.Keys[i]) continue;
-            if (key == node.Keys[i]) return node;
+            var (keyIndex, childIndex) = BinarySearchKey(node, key);
+            if (keyIndex is not null && node.Keys[keyIndex.Value] == key) return node; // Node is found.
 
-            // Value is less that current key, search its child.
-            return node.IsLeaf ? null : SearchKey(key, node.Children[i]);
+            // Key is not found and there is no other child left to search for.
+            if (node.IsLeaf) return null;
+
+            if (childIndex is null) throw new InvalidOperationException("Node is not a leaf, child index must not be null");
+
+            // Search for key in the child.
+            node = node.Children[childIndex.Value];
         }
-
-        // Value is greater than all keys, search right most child
-        return node.IsLeaf ? null : SearchKey(key, node.Children[node.Keys.Count]);
     }
 
-    // TODO Use binary search? https://en.wikipedia.org/wiki/B-tree#Search
     private int? Search(int key, BtreeNode node)
     {
-        for (var i = 0; i < node.Keys.Count; i++)
+        var (keyIndex, childIndex) = BinarySearchKey(node, key);
+        if (keyIndex is not null && node.Keys[keyIndex.Value] == key) return key;
+
+        // Key is not found and there is no other child left to search for.
+        if (node.IsLeaf) return null;
+        
+        if (childIndex is null) throw new InvalidOperationException("Node is not a leaf, child index must not be null");
+
+        // Search for key in the child.
+        return Search(key, node.Children[childIndex.Value]);
+    }
+
+    /// <summary>
+    /// Performs a binary search for a specified <paramref name="target"/> key in the <paramref name="node"/>'s keys.
+    /// If the <paramref name="target"/> key is found, the method returns a tuple with the index of the key and a null value
+    /// for the child index. If the key is not found, the method returns a tuple where the key index is null and the child index
+    /// indicates where the <paramref name="target"/> might be located if the search continues in the child nodes. If <paramref name="node"/>
+    /// is a leaf node and the key is not found, the child index will be null.
+    /// The method uses a binary search algorithm to efficiently locate the key or determine the appropriate child index for further searching.
+    /// </summary>
+    /// <param name="node">The B-tree node in which to search for the <paramref name="target"/> key.</param>
+    /// <param name="target">The key value to search for within the <paramref name="node"/> keys.</param>
+    /// <returns>A tuple where:
+    ///     - <c>keyIndex</c> is the index of the <paramref name="target"/> key if found, otherwise null.
+    ///     - <c>childIndex</c> is the index of the child node to search if the <paramref name="target"/> is not found and <paramref name="node"/> is not a leaf; otherwise, null.
+    /// </returns>
+    private (int? keyIndex, int? childIndex) BinarySearchKey(BtreeNode node, int target)
+    {
+        var start = 0;
+        var end = node.Keys.Count - 1;
+        while (start <= end)
         {
-            if (key > node.Keys[i]) continue;
-            if (key == node.Keys[i]) return node.Keys[i];
+            var middle = (start + end) / 2;
 
-            // Value is less than current key, and there is no
-            // child to search for the Value in its Keys.
-            if (node.IsLeaf) return -1;
+            if (node.Keys[middle] == target)
+            {
+                return (middle, null); // Key found at index `middle`
+            }
 
-            // Value is less that current key, search its child.
-            return Search(key, node.Children[i]);
+            if (node.Keys[middle] > target)
+            {
+                end = middle - 1; // Search in the left half
+                continue;
+            }
+
+            start = middle + 1; // Search in the right half
         }
 
-        // Value is greater than all keys, and there is no
-        // child to search for the Value in its Keys.
-        if (node.IsLeaf) return -1;
+        // Key not found, determine the child index to search next
+        return (null, GetChildIndex());
 
-        // Value is greater than all keys, search right most child
-        return Search(key, node.Children[node.Keys.Count]);
+        int? GetChildIndex()
+        {
+            // The key is not found, and there is no child left.
+            if (node.IsLeaf) return null;
+
+            var indexOfLastCheckedKey = start - 1 < 0 ? 0 : start - 1;
+            var leftChildIndex = indexOfLastCheckedKey - 1 < 0 ? 0 : indexOfLastCheckedKey - 1;
+            var isLastCheckedKeyGreaterThanTarget = node.Keys[indexOfLastCheckedKey] > target;
+
+            return isLastCheckedKeyGreaterThanTarget ? leftChildIndex : indexOfLastCheckedKey + 1;
+        }
     }
 }
