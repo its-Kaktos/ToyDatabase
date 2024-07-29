@@ -3,11 +3,12 @@ using System.Text;
 
 namespace SqlParser.BtreeImpl;
 
+// These are the data from
 public class BtreeDisk
 {
     public long GetSizeForFile(BtreeNode root)
     {
-        return GetSizeForFileInternal(Root);
+        return GetSizeForFileInternal(root);
     }
 
     // 0 in files always means NULL

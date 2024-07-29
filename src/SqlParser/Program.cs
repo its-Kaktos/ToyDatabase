@@ -17,7 +17,8 @@ foreach (var i in numbers)
 }
 
 
-var first = btree.GetSizeForFile();
+var btreeDisk = new BtreeDisk();
+var first = btreeDisk.GetSizeForFile(btree.Root);
 
 Console.WriteLine($"Size of btree is {first:N0} bytes");
 
@@ -27,8 +28,8 @@ Console.WriteLine($"Size of btree is {first:N0} bytes");
 // File.WriteAllText("/home/kaktos/Desktop/" + Guid.NewGuid(), btreeStr);
 
 var filePath = "/home/kaktos/Desktop/test.txt";
-btree.WriteToFile(filePath);
-btree.ReadFile(filePath);
+btreeDisk.WriteToFile(filePath, btree.Root);
+btreeDisk.ReadFile(filePath);
 btree.ThrowWhenInvalidBTree(maxKeysCount);
 
 Console.WriteLine("Done.");
