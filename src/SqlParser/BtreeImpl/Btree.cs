@@ -1,4 +1,7 @@
+using System.Collections;
 using System.Diagnostics;
+using System.Text;
+using System.Text.Json.Nodes;
 
 namespace SqlParser.BtreeImpl;
 
@@ -169,12 +172,14 @@ public class Btree
         while (true)
         {
             var (keyIndex, childIndex) = BinarySearchKey(node, key);
-            if (keyIndex is not null && node.Keys[keyIndex.Value] == key) throw new InvalidOperationException("Duplicate key is not allowed.");
+            if (keyIndex is not null && node.Keys[keyIndex.Value] == key)
+                throw new InvalidOperationException("Duplicate key is not allowed.");
 
             // If node is a leaf, it means we have found the node to insert our value into.
             if (node.IsLeaf) return node;
 
-            if (childIndex is null) throw new InvalidOperationException("Node is not a leaf, child index must not be null");
+            if (childIndex is null)
+                throw new InvalidOperationException("Node is not a leaf, child index must not be null");
 
             // Search for key in the child.
             node = node.Children[childIndex.Value];
@@ -191,7 +196,8 @@ public class Btree
             // Key is not found and there is no other child left to search for.
             if (node.IsLeaf) return null;
 
-            if (childIndex is null) throw new InvalidOperationException("Node is not a leaf, child index must not be null");
+            if (childIndex is null)
+                throw new InvalidOperationException("Node is not a leaf, child index must not be null");
 
             // Search for key in the child.
             node = node.Children[childIndex.Value];

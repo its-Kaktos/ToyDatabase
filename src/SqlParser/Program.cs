@@ -2,26 +2,33 @@
 // https://ruslanspivak.com/lsbasi-part1/
 // https://forcedotcom.github.io/phoenix/index.html#select_expression
 
+using System.Text;
+using System.Text.Json;
 using SqlParser.BtreeImpl;
 using SqlParser.Extensions;
 
-
 var maxKeysCount = 4;
 var btree = new Btree(maxKeysCount);
-var numbers = Enumerable.Range(1, 50).ToList();
+var numbers = Enumerable.Range(1, 5).OrderBy(_=>Guid.NewGuid()).ToList();
 foreach (var i in numbers)
 {
     InsertAndPrint(btree, i);
     btree.ThrowWhenInvalidBTree(maxKeysCount);
 }
 
-DeleteAndPrint(btree, 2);
 
-btree.StressTestRandomTreesInfinitely();
+var first = btree.GetSizeForFile();
+
+Console.WriteLine($"Size of btree is {first:N0} bytes");
+
+// btree.StressTestRandomTreesInfinitely();
 
 // var btreeStr = btree.ToPrettyString();
 // File.WriteAllText("/home/kaktos/Desktop/" + Guid.NewGuid(), btreeStr);
 
+var filePath = "/home/kaktos/Desktop/test.txt";
+btree.WriteToFile(filePath);
+btree.ReadFile(filePath);
 btree.ThrowWhenInvalidBTree(maxKeysCount);
 
 Console.WriteLine("Done.");
