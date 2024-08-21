@@ -7,6 +7,7 @@ namespace SqlParser.BtreeImpl;
 public class BtreeDisk
 {
     private const ushort PageSize = 8 * 1024;
+    private const byte NullData = 0;
 
     public long GetSizeForFile(BtreeNode root)
     {
@@ -19,7 +20,8 @@ public class BtreeDisk
         using var stream = new FileStream(path, FileMode.Create, FileAccess.Write);
         using var writer = new BinaryWriter(stream);
 
-        var startOfCells = PageSize;
+        ushort specialSize = 1;
+        var startOfCells = (ushort)(PageSize - specialSize);
         Span<byte> content = stackalloc byte[4];
         var linePointers = new List<ItemIdData>();
         var cells = new List<Cell>();
@@ -40,7 +42,7 @@ public class BtreeDisk
             cells.Insert(0, cell);
 
             startOfCells -= cell.SizeInBytes();
-            linePointers.Add(new ItemIdData(0)
+            linePointers.Add(new ItemIdData
             {
                 Flags = ItemIdDataFlags.Normal,
                 Length = cell.SizeInBytes(),
@@ -65,18 +67,16 @@ public class BtreeDisk
             Linp = linePointers,
             Lower = (ushort)lower,
             Upper = upper,
-            Special = PageSize,
+            Special = specialSize,
             PruneXid = 0,
             PageSizeAndVersion = PageSize // TODO fix?
         };
 
         pageHeaderData.Write(writer);
 
-        var insertNullData = upper - writer.BaseStream.Position;
-        const byte nullData = 0;
         for (var i = writer.BaseStream.Position; i < upper; i++)
         {
-            writer.Write(nullData);
+            writer.Write(NullData);
         }
 
         foreach (var cell in cells)
@@ -94,18 +94,7 @@ public class BtreeDisk
         using var streamReader = new FileStream(path, FileMode.Open, FileAccess.Read);
         using var reader = new BinaryReader(streamReader);
 
-        Span<byte> s = stackalloc byte[pageSize];
-        reader.Read(s);
-        reader.BaseStream.Seek(0, SeekOrigin.Begin);
-
-        Console.WriteLine("---------START => Binary file-----------");
-        foreach (var b in s)
-        {
-            Console.Write(b);
-        }
-
-        Console.WriteLine();
-        Console.WriteLine("+++++++++++++++END => Binary file+++++++++++");
+        PrintPage(reader);
 
         var (pageHeaderData, cells) = ReadPageHeaderDataAndCells(reader);
 
@@ -154,5 +143,21 @@ public class BtreeDisk
         }
 
         return sumOfKeysSize;
+    }
+
+    private void PrintPage(BinaryReader reader)
+    {
+        var s = new byte[PageSize];
+        reader.Read(s);
+        reader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+        Console.WriteLine("---------START => Binary file-----------");
+        foreach (var b in s)
+        {
+            Console.Write(b);
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("+++++++++++++++END => Binary file+++++++++++");
     }
 }
