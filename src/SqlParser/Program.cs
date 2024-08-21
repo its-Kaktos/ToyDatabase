@@ -7,29 +7,30 @@ using System.Text.Json;
 using SqlParser.BtreeImpl;
 using SqlParser.Extensions;
 
-var maxKeysCount = 4;
+var maxKeysCount = 10;
 var btree = new Btree(maxKeysCount);
-var numbers = Enumerable.Range(1, 5).OrderBy(_=>Guid.NewGuid()).ToList();
+var numbers = Enumerable.Range(1, 40).OrderBy(_=>Guid.NewGuid()).ToList();
 foreach (var i in numbers)
 {
     InsertAndPrint(btree, i);
     btree.ThrowWhenInvalidBTree(maxKeysCount);
 }
 
-
 var btreeDisk = new BtreeDisk();
 var first = btreeDisk.GetSizeForFile(btree.Root);
 
 Console.WriteLine($"Size of btree is {first:N0} bytes");
 
-// btree.StressTestRandomTreesInfinitely();
+// var filePath = "/home/kaktos/Desktop/test";
+var filePath = "/home/kaktos/Desktop/test";
 
-// var btreeStr = btree.ToPrettyString();
-// File.WriteAllText("/home/kaktos/Desktop/" + Guid.NewGuid(), btreeStr);
+var (pageHeaderData, cells) = btreeDisk.WriteToFile(filePath, btree.Root);
 
-var filePath = "/home/kaktos/Desktop/test.txt";
-btreeDisk.WriteToFile(filePath, btree.Root);
-btreeDisk.ReadFile(filePath);
+var readBtree = btreeDisk.ReadFile(filePath, maxKeysCount, pageHeaderData, cells);
+
+Console.WriteLine("---------------Readbtree----------------");
+readBtree.PrettyPrint();
+
 btree.ThrowWhenInvalidBTree(maxKeysCount);
 
 Console.WriteLine("Done.");

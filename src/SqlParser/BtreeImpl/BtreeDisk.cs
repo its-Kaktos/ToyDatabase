@@ -1,134 +1,145 @@
-using System.Collections;
-using System.Text;
+using System.Buffers.Binary;
+using SqlParser.PageImpl;
 
 namespace SqlParser.BtreeImpl;
 
 // These are the data from
 public class BtreeDisk
 {
+    private const ushort PageSize = 8 * 1024;
+
     public long GetSizeForFile(BtreeNode root)
     {
         return GetSizeForFileInternal(root);
     }
 
     // 0 in files always means NULL
-    public void WriteToFile(string path, BtreeNode root)
+    public (PageHeaderData pageHeaderData, List<Cell> cells) WriteToFile(string path, BtreeNode root)
     {
-        var intAsBinary = Convert.ToString(99_823, 2);
-        var test = Convert.ToString(int.MaxValue, 2);
-        var test2 = Convert.ToString(int.MinValue, 2);
-
         using var stream = new FileStream(path, FileMode.Create, FileAccess.Write);
         using var writer = new BinaryWriter(stream);
 
-        // for parent node of root is null
-        writer.Write(0);
-
-        var lastChildOffset = root.Children.Count - 1;
-        writer.Write(lastChildOffset);
-
+        var startOfCells = PageSize;
+        Span<byte> content = stackalloc byte[4];
+        var linePointers = new List<ItemIdData>();
+        var cells = new List<Cell>();
         for (var i = 0; i < root.Keys.Count; i++)
         {
-            // child pointer
-            writer.Write(i);
-            writer.Write(root.Keys[i]);
+            BinaryPrimitives.WriteInt32LittleEndian(content, root.Keys[i]);
+
+            var cell = new Cell()
+            {
+                Header = new CellHeader
+                {
+                    Size = (ushort)content.Length,
+                    LeftChild = 0
+                },
+                Content = content.ToArray()
+            };
+
+            cells.Insert(0, cell);
+
+            startOfCells -= cell.SizeInBytes();
+            linePointers.Add(new ItemIdData(0)
+            {
+                Flags = ItemIdDataFlags.Normal,
+                Length = cell.SizeInBytes(),
+                Offset = startOfCells
+            });
         }
 
-        intAsBinary = Convert.ToString(99_823, 2);
+        var lower = PageHeaderData.SizeInBytesExcludingLinp()
+                    + linePointers.Count * ItemIdData.SizeInBytes();
 
-        // The page header contains metadata about the page. 
-        void WritePageHeader()
+        var upper = startOfCells;
+
+        var pageHeaderData = new PageHeaderData
         {
-            // TODO Add parent pointer as well?
+            Flags = PageHeaderDataFlags.AllVisible,
+            Lsn = new PageXlogRecPtr
+            {
+                XLogId = 1,
+                XRecOff = 1
+            },
+            CheckSum = 1,
+            Linp = linePointers,
+            Lower = (ushort)lower,
+            Upper = upper,
+            Special = PageSize,
+            PruneXid = 0,
+            PageSizeAndVersion = PageSize // TODO fix?
+        };
 
-            // | Page Header (24 bytes) |
-            // | pd_linp | pd_special | pd_pagesize_version | pd_lower | pd_upper | pd_flags | pd_level | pd_fillfactor |
+        pageHeaderData.Write(writer);
 
-            // pd_linp: Offset of item pointers (2 bytes).
-            writer.Write((short)0);
-
-            // pd_special: Offset of the special space area (2 bytes).
-            writer.Write((short)0);
-
-            // pd_pagesize_version: Page size and version information (2 bytes).
-            writer.Write((short)0);
-
-            // pd_lower: Offset to the start of the item pointers (2 bytes).
-            writer.Write((short)0);
-
-            // pd_upper: Offset to the end of the free space (2 bytes).
-            writer.Write((short)0);
-
-            // pd_flags: Flags indicating page type (1 byte).
-            writer.Write((short)0);
-
-            // pd_level: Level of the B-tree (1 byte, for internal nodes).
-            writer.Write((short)0);
-
-            // pd_fillfactor: Fill factor for the page (1 byte).
-            writer.Write((short)0);
-        }
-        
-        // Item pointers point to the actual data (index tuples) or to child pages in the case of internal nodes.
-        // Each item pointer is a short integer (2 bytes) representing the offset of the tuple within the page.
-        // Size: 4 bytes per item pointer (2 bytes for offset, 2 bytes for additional information).
-        void WriteItemPointer()
+        var insertNullData = upper - writer.BaseStream.Position;
+        const byte nullData = 0;
+        for (var i = writer.BaseStream.Position; i < upper; i++)
         {
-            // | Item Pointer 1 (4 bytes) | Item Pointer 2 (4 bytes) | ... |
-
-            // pd_linp: Offset of item pointers (2 bytes).
-            writer.Write((short)0);
+            writer.Write(nullData);
         }
+
+        foreach (var cell in cells)
+        {
+            cell.Write(writer);
+        }
+
+        return (pageHeaderData, cells);
     }
 
-    public void ReadFile(string path)
+    public Btree ReadFile(string path, int maxKeysCount, PageHeaderData eP, List<Cell> eC)
     {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-        using var reader = new BinaryReader(stream);
+        const ushort pageSize = 8 * 1024; // 8 KB
 
-        var buffer = new byte[16];
-        stream.Read(buffer);
-        var bitArray = new BitArray(buffer);
+        using var streamReader = new FileStream(path, FileMode.Open, FileAccess.Read);
+        using var reader = new BinaryReader(streamReader);
 
-        var x111 = buffer.Select(Convert.ToChar).ToArray();
-        var x23423 = new string(x111);
-        foreach (var b in buffer)
+        Span<byte> s = stackalloc byte[pageSize];
+        reader.Read(s);
+        reader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+        Console.WriteLine("---------START => Binary file-----------");
+        foreach (var b in s)
         {
             Console.Write(b);
         }
 
         Console.WriteLine();
-        Console.WriteLine("bewlo is bit");
+        Console.WriteLine("+++++++++++++++END => Binary file+++++++++++");
 
-        foreach (var b in bitArray)
+        var (pageHeaderData, cells) = ReadPageHeaderDataAndCells(reader);
+
+        var btree = new Btree(maxKeysCount);
+        var node = new BtreeNode(maxKeysCount);
+
+        var keys = cells.Select(x => BinaryPrimitives.ReadInt32LittleEndian(x.Content)).ToList();
+        node.SetKeys(keys);
+        btree.SetRoot(node);
+
+        return btree;
+    }
+
+    private (PageHeaderData pageHeaderData, List<Cell> cells) ReadPageHeaderDataAndCells(BinaryReader reader)
+    {
+        var pageHeaderData = PageHeaderData.Read(reader);
+
+        var cells = new List<Cell>();
+        var bytesCount = PageSize - pageHeaderData.Upper;
+        var moveTo = Math.Abs(reader.BaseStream.Position - pageHeaderData.Upper);
+        reader.BaseStream.Seek(moveTo, SeekOrigin.Current);
+
+        var readUntil = reader.BaseStream.Position + bytesCount;
+
+        var i = reader.BaseStream.Position;
+        while (i < readUntil)
         {
-            Console.Write((bool)b ? "1" : "0");
+            var cell = Cell.Read(reader);
+            cells.Insert(0, cell);
+
+            i += cell.SizeInBytes();
         }
 
-        Console.WriteLine(x23423);
-        stream.Seek(0, SeekOrigin.Begin);
-
-        // 
-        var parentPointer = reader.ReadInt32();
-        var lastChildPointer = reader.ReadInt32();
-
-        var keyChild = new List<(int, int)>();
-        while (stream.Position < stream.Length)
-        {
-            keyChild.Add((reader.ReadInt32(), reader.ReadInt32()));
-        }
-
-        var sb = new StringBuilder();
-        sb.Append($"parentPointer: {parentPointer}, lastChildPointer: {lastChildPointer},");
-        sb.Append(" keys: { ");
-        foreach (var valueTuple in keyChild)
-        {
-            sb.Append($"(children pointer: {valueTuple.Item1}, key: {valueTuple.Item2}), ");
-        }
-
-        sb.Append(" }");
-
-        Console.WriteLine(sb.ToString());
+        return (pageHeaderData, cells);
     }
 
     private long GetSizeForFileInternal(BtreeNode node)

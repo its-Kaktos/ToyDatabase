@@ -78,6 +78,11 @@ public class Btree
         BalanceTreeAfterDeletion(node);
     }
 
+    public void SetRoot(BtreeNode node)
+    {
+        Root = node;
+    }
+
     // Tail recursive calls are never optimized in c#! : https://blog.objektkultur.de/about-tail-recursion-in-.net/
     // You can see it is not optimized in the IL Viewer.
     private void BalanceTreeAfterDeletion(BtreeNode node)

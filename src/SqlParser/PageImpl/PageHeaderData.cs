@@ -99,144 +99,66 @@ public class PageHeaderData
     /// line pointer array
     /// </summary>
     public List<ItemIdData> Linp { get; set; }
-}
 
-/*
- *Source: https://github.com/postgres/postgres/blob/7da1bdc2c2f17038f2ae1900be90a0d7b5e361e0/src/include/storage/bufpage.h#L187
- *
- * pd_flags contains the following flag bits.  Undefined bits are initialized
- * to zero and may be used in the future.
- *
- * PD_HAS_FREE_LINES is set if there are any LP_UNUSED line pointers before
- * pd_lower.  This should be considered a hint rather than the truth, since
- * changes to it are not WAL-logged.
- *
- * PD_PAGE_FULL is set if an UPDATE doesn't find enough free space in the
- * page for its new tuple version; this suggests that a prune is needed.
- * Again, this is just a hint.
- */
-[Flags]
-public enum PageHeaderDataFlags : ushort
-{
-    /// <summary>
-    /// are there any unused line pointers?
-    /// </summary>
-    HasFreeLines = 1,
-
-    /// <summary>
-    /// not enough free space for new tuple?
-    /// </summary>
-    PageFull = 2,
-
-    /// <summary>
-    /// ll tuples on page are visible to everyone
-    /// </summary>
-    AllVisible = 4
-}
-
-/*
- * Source: https:/|/github.com/postgres/postgres/blob/7da1bdc2c2f17038f2ae1900be90a0d7b5e361e0/src/include/storage/bufpage.h#L97
- *  For historical reasons, the 64-bit LSN value is stored as two 32-bit
- * values.
- * Note: there is nothing stopping me to split these apart.
- */
-public class PageXlogRecPtr
-{
-    /// <summary>
-    /// High bits
-    /// </summary>
-    public uint XLogId { get; set; }
-
-    /// <summary>
-    /// Low bits
-    /// </summary>
-    public uint XRecOff { get; set; }
-}
-
-/*
- * Source: https://github.com/postgres/postgres/blob/b919a97a6cd204cbd9b77d12c9e60ad59eea04a4/src/include/storage/itemid.h#L25
- *
- * A line pointer on a buffer page.  See buffer page definitions and comments
- * for an explanation of how line pointers are used.
- *
- * In some cases a line pointer is "in use" but does not have any associated
- * storage on the page.  By convention, lp_len == 0 in every line pointer
- * that does not have storage, independently of its lp_flags state.
- */
-public class ItemIdData
-{
-    private int _value;
-
-    public ItemIdData(int value)
+    public static int SizeInBytesExcludingLinp()
     {
-        _value = value;
+        var size = PageXlogRecPtr.SizeInBytes() // Lsn
+                   + sizeof(ushort) // CheckSum
+                   + sizeof(PageHeaderDataFlags) // Flags
+                   + sizeof(ushort) // Lower
+                   + sizeof(ushort) // Upper
+                   + sizeof(ushort) // Special
+                   + sizeof(ushort) // PageSizeAndVersion
+                   + sizeof(uint); // PruneXid
+
+        return size;
     }
 
-    // Property to get and set the offset (15 bits)
-    public ushort Offset
+    public void Write(BinaryWriter writer)
     {
-        get => (ushort)(_value & 0x7FFF); // Extract 15 bits
-        set => _value = (_value & ~0x7FFF) | (value & 0x7FFF); // Set 15 bits
+        Lsn.Write(writer);
+        writer.Write(CheckSum);
+        writer.Write((ushort)Flags);
+        writer.Write(Lower);
+        writer.Write(Upper);
+        writer.Write(Special);
+        writer.Write(PageSizeAndVersion);
+        writer.Write(PruneXid);
+
+        foreach (var itemIdData in Linp)
+        {
+            itemIdData.Write(writer);
+        }
     }
 
-    // Property to get and set the flags (2 bits)
-    public ItemIdDataFlags Flags
+    public static PageHeaderData Read(BinaryReader reader)
     {
-        get => (ItemIdDataFlags)((_value >> 15) & 0x03); // Extract 2 bits
-        set => _value = (_value & ~0x6000) | (((ushort)value & 0x03) << 15); // Set 2 bits
+        var output = new PageHeaderData
+        {
+            Lsn = PageXlogRecPtr.Read(reader),
+            CheckSum = reader.ReadUInt16(),
+            Flags = (PageHeaderDataFlags)reader.ReadUInt16(),
+            Lower = reader.ReadUInt16(),
+            Upper = reader.ReadUInt16(),
+            Special = reader.ReadUInt16(),
+            PageSizeAndVersion = reader.ReadUInt16(),
+            PruneXid = reader.ReadUInt32()
+        };
+
+        var linp = new List<ItemIdData>();
+        var endOfLinp = output.Lower - PageHeaderData.SizeInBytesExcludingLinp();
+        var readUntil = reader.BaseStream.Position + endOfLinp;
+
+        var i = reader.BaseStream.Position;
+        while (i < readUntil)
+        {
+            linp.Add(ItemIdData.Read(reader));
+
+            i += ItemIdData.SizeInBytes();
+        }
+
+        output.Linp = linp;
+
+        return output;
     }
-
-    // Property to get and set the length (15 bits)
-    public ushort Length
-    {
-        get => (ushort)((_value >> 17) & 0x7FFF); // Extract 15 bits
-        set => _value = (_value & ~0x7FFF0000) | ((value & 0x7FFF) << 17); // Set 15 bits
-    }
-
-    // Method to combine bit fields into an int
-    public int ToInt32()
-    {
-        return _value;
-    }
-
-    public static ItemIdData FromInt32(int value)
-    {
-        return new ItemIdData(value);
-    }
-
-    // Method to display the fields (for testing)
-    public override string ToString()
-    {
-        return $"Offset: {Offset}, Flags: {Flags}, Length: {Length}";
-    }
-}
-
-/*
- * Source: https://github.com/postgres/postgres/blob/b919a97a6cd204cbd9b77d12c9e60ad59eea04a4/src/include/storage/itemid.h#L38
- *
- * lp_flags has these possible states.  An UNUSED line pointer is available
- * for immediate re-use, the other states are not.
- */
-[Flags]
-public enum ItemIdDataFlags : ushort
-{
-    /// <summary>
-    /// unused (should always have lp_len=0)
-    /// </summary>
-    Unused = 1,
-
-    /// <summary>
-    /// used (should always have lp_len>0)
-    /// </summary>
-    Normal = 2,
-
-    /// <summary>
-    /// HOT redirect (should have lp_len=0)
-    /// </summary>
-    Redirect = 4,
-
-    /// <summary>
-    /// dead, may or may not have storage
-    /// </summary>
-    Dead = 8
 }
